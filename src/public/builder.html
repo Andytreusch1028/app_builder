@@ -1551,7 +1551,7 @@
 
             // Lazy-load Monaco editor when Code tab is clicked
             if (name === 'code' && !monacoEditor) {
-                loadMonacoEditor();
+                initializeMonacoEditor();
             }
         }
 
