@@ -790,53 +790,60 @@
         }
 
         function renderQualityInsights() {
+            // Helper to safely update element
+            const setElement = (id, value, styleProp, styleValue) => {
+                const el = document.getElementById(id);
+                if (el) {
+                    if (value !== undefined) el.textContent = value;
+                    if (styleProp && styleValue) el.style[styleProp] = styleValue;
+                }
+            };
+
             // Status
-            document.getElementById('insight-status').textContent = qualityInsightsData.status;
-            document.getElementById('insight-status').style.color =
-                qualityInsightsData.status === 'Building' ? 'var(--primary)' :
+            const statusColor = qualityInsightsData.status === 'Building' ? 'var(--primary)' :
                 qualityInsightsData.status === 'Complete' ? 'var(--success)' :
                 qualityInsightsData.status === 'Error' ? 'var(--error)' : 'var(--text-secondary)';
+            setElement('insight-status', qualityInsightsData.status, 'color', statusColor);
 
             // Build Time
             if (qualityInsightsData.buildTime !== null) {
-                document.getElementById('insight-build-time').textContent = `${qualityInsightsData.buildTime}ms`;
+                setElement('insight-build-time', `${qualityInsightsData.buildTime}ms`);
             }
 
             // Quality Score
             if (qualityInsightsData.qualityScore !== null) {
                 const score = Math.round(qualityInsightsData.qualityScore * 100);
-                document.getElementById('insight-quality-score').textContent = `${score}/100`;
-                document.getElementById('insight-quality-fill').style.width = `${score}%`;
-
-                // Color based on score
+                setElement('insight-quality-score', `${score}/100`);
                 const fill = document.getElementById('insight-quality-fill');
-                if (score >= 80) fill.style.background = 'var(--success)';
-                else if (score >= 60) fill.style.background = 'var(--warning)';
-                else fill.style.background = 'var(--error)';
+                if (fill) {
+                    fill.style.width = `${score}%`;
+                    fill.style.background = score >= 80 ? 'var(--success)' : score >= 60 ? 'var(--warning)' : 'var(--error)';
+                }
             }
 
             // File Count
             if (qualityInsightsData.fileCount > 0) {
-                document.getElementById('insight-file-count').textContent = qualityInsightsData.fileCount;
+                setElement('insight-file-count', qualityInsightsData.fileCount);
             }
 
             // Total Size
             if (qualityInsightsData.totalSize > 0) {
-                document.getElementById('insight-total-size').textContent = formatBytes(qualityInsightsData.totalSize);
+                setElement('insight-total-size', formatBytes(qualityInsightsData.totalSize));
             }
 
             // Technologies
             if (qualityInsightsData.technologies.length > 0) {
                 const techContainer = document.getElementById('insight-technologies');
-                techContainer.innerHTML = qualityInsightsData.technologies
-                    .map(tech => `<span class="tech-badge">${tech}</span>`)
-                    .join('');
+                if (techContainer) {
+                    techContainer.innerHTML = qualityInsightsData.technologies
+                        .map(tech => `<span class="tech-badge">${tech}</span>`)
+                        .join('');
+                }
             }
 
             // Iterations
             if (qualityInsightsData.iterations > 0) {
-                document.getElementById('insight-iterations').textContent =
-                    `${qualityInsightsData.iterations} ${qualityInsightsData.iterations > 1 ? '(Improved ✨)' : ''}`;
+                setElement('insight-iterations', `${qualityInsightsData.iterations} ${qualityInsightsData.iterations > 1 ? '(Improved ✨)' : ''}`);
             }
         }
 
@@ -910,67 +917,73 @@
         // ========================================
 
         async function refreshProviderMetrics() {
+            // Helper for safe element updates
+            const setEl = (id, text, style) => {
+                const el = document.getElementById(id);
+                if (el) {
+                    if (text !== undefined) el.textContent = text;
+                    if (style) Object.assign(el.style, style);
+                }
+            };
+
             try {
                 const response = await fetch('/api/builder/metrics/provider');
                 const result = await response.json();
 
                 if (!result.success) {
                     console.error('Failed to fetch provider metrics:', result.error);
-                    document.getElementById('metrics-status').textContent = 'Error';
-                    document.getElementById('metrics-status').style.color = 'var(--error)';
+                    setEl('metrics-status', 'Error', { color: 'var(--error)' });
                     return;
                 }
 
                 const data = result.data;
 
                 if (!data.enabled) {
-                    document.getElementById('metrics-status').textContent = 'Disabled';
-                    document.getElementById('metrics-status').style.color = 'var(--text-secondary)';
+                    setEl('metrics-status', 'Disabled', { color: 'var(--text-secondary)' });
                     return;
                 }
 
                 // Update status
-                document.getElementById('metrics-status').textContent = 'Active';
-                document.getElementById('metrics-status').style.color = 'var(--success)';
+                setEl('metrics-status', 'Active', { color: 'var(--success)' });
 
                 // Update summary metrics
                 const summary = data.summary;
-                document.getElementById('metrics-total').textContent = summary.totalGenerations || 0;
-                document.getElementById('metrics-response-time').textContent =
-                    summary.avgResponseTime ? `${summary.avgResponseTime}ms` : '—';
-                document.getElementById('metrics-quality').textContent =
-                    summary.avgQualityScore ? `${summary.avgQualityScore}%` : '—';
-                document.getElementById('metrics-escalations').textContent = summary.escalations || 0;
+                setEl('metrics-total', summary.totalGenerations || 0);
+                setEl('metrics-response-time', summary.avgResponseTime ? `${summary.avgResponseTime}ms` : '—');
+                setEl('metrics-quality', summary.avgQualityScore ? `${summary.avgQualityScore}%` : '—');
+                setEl('metrics-escalations', summary.escalations || 0);
 
                 // Update quality bar
                 if (summary.avgQualityScore) {
                     const fill = document.getElementById('metrics-quality-fill');
-                    fill.style.width = `${summary.avgQualityScore}%`;
+                    if (fill) fill.style.width = `${summary.avgQualityScore}%`;
                 }
 
                 // Update provider usage
                 const providerUsage = data.providerUsage;
                 const providersDiv = document.getElementById('metrics-providers');
-                if (Object.keys(providerUsage).length > 0) {
-                    const total = Object.values(providerUsage).reduce((sum, count) => sum + count, 0);
-                    const usageHtml = Object.entries(providerUsage)
-                        .map(([provider, count]) => {
-                            const percentage = Math.round((count / total) * 100);
-                            const shortName = provider.replace('ollama-', '').replace('qwen2.5-coder:', '');
-                            return `<div style="margin-bottom: 4px;">
-                                <strong>${shortName}</strong>: ${count} (${percentage}%)
-                            </div>`;
-                        })
-                        .join('');
-                    providersDiv.innerHTML = usageHtml;
-                } else {
-                    providersDiv.innerHTML = '—';
+                if (providersDiv) {
+                    if (Object.keys(providerUsage).length > 0) {
+                        const total = Object.values(providerUsage).reduce((sum, count) => sum + count, 0);
+                        const usageHtml = Object.entries(providerUsage)
+                            .map(([provider, count]) => {
+                                const percentage = Math.round((count / total) * 100);
+                                const shortName = provider.replace('ollama-', '').replace('qwen2.5-coder:', '');
+                                return `<div style="margin-bottom: 4px;">
+                                    <strong>${shortName}</strong>: ${count} (${percentage}%)
+                                </div>`;
+                            })
+                            .join('');
+                        providersDiv.innerHTML = usageHtml;
+                    } else {
+                        providersDiv.innerHTML = '—';
+                    }
                 }
 
                 console.log('✅ Provider metrics refreshed');
             } catch (error) {
                 console.error('Error refreshing provider metrics:', error);
-                document.getElementById('metrics-status').textContent = 'Error';
+                setEl('metrics-status', 'Error', { color: 'var(--error)' });
                 document.getElementById('metrics-status').style.color = 'var(--error)';
             }
         }
