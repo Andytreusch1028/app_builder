@@ -989,8 +989,10 @@
             initializeWebSocket();
             initializeColumnResize();
             setAppMode('Build');
-            // Set Preview as default tab
-            switchWorkspaceTab('preview');
+            // Set Build Log as default tab in middle panel
+            switchMiddleTab('build-log');
+            // Update segmented control to show Build mode active
+            updateSegmentedControl();
             // Load provider metrics
             refreshProviderMetrics();
         });
@@ -1238,7 +1240,7 @@
         }
         function resetAgentSettings() { if (confirm('Reset to default agent persona?')) { agentPersona = DEFAULT_AGENT_PERSONA; localStorage.removeItem('agentPersona'); document.getElementById('agent-persona').value = DEFAULT_AGENT_PERSONA; addChatMessage('system', '🔄 Agent settings reset to default.'); } }
 
-        let chatMode = 'chat';
+        let chatMode = 'build'; // Default to build mode
         let conversationHistory = [];
         let qualityMode = false;
 
@@ -1273,10 +1275,29 @@
         async function sendBuildRequest() {
             const input = document.getElementById('prompt_composer');
             const request = input.value.trim();
-            if (!request) { alert('Please enter a build request'); return; }
-            if (!currentProject) { alert('Please create a project first'); return; }
-            addChatMessage('user', request); input.value = '';
-            if (chatMode === 'chat') await sendChatMessage(request); else await sendBuildExecute(request);
+
+            // Validation with better user feedback
+            if (!request) {
+                addChatMessage('error', '⚠️ Please enter a build request in the text box above');
+                return;
+            }
+
+            if (!currentProject) {
+                addChatMessage('error', '⚠️ No project selected! Please create a new project first.');
+                addChatMessage('system', '💡 Click the "+ New Project" button in the left sidebar under PROJECTS');
+                return;
+            }
+
+            // Add user message and clear input
+            addChatMessage('user', request);
+            input.value = '';
+
+            // Execute based on mode
+            if (chatMode === 'chat') {
+                await sendChatMessage(request);
+            } else {
+                await sendBuildExecute(request);
+            }
         }
 
         function sleep(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
