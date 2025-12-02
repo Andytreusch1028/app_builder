@@ -512,20 +512,27 @@ Description: ${project.description || 'No description'}`;
       }
 
       // Build the enhanced task with project context
+      // Get relative path from workspace root for tool calls
+      const relativeProjectPath = `projects/${project.name}`;
+
       const enhancedTask = `${prompt}
 
 IMPORTANT INSTRUCTIONS:
 - You are building for project: ${project.name}
-- Project directory: ${project.path}
-- Create all files in the project directory using the write_file tool
+- Create all files using the write_file tool with FULL PATHS starting with: ${relativeProjectPath}/
+- For example: write_file with path "${relativeProjectPath}/index.html"
 - Generate a complete, working application
 - Include index.html, styles.css, and script.js at minimum
 - Make sure all files are properly linked together
 
+REQUIRED FILE PATHS (use exactly these paths with write_file):
+- ${relativeProjectPath}/index.html (main HTML file)
+- ${relativeProjectPath}/styles.css (CSS styles)
+- ${relativeProjectPath}/script.js (JavaScript logic)
+
 Project Context:
 - Name: ${project.name}
-- Description: ${project.description || 'No description'}
-- Path: ${project.path}`;
+- Description: ${project.description || 'No description'}`;
 
       let executionResult;
 
