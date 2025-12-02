@@ -1,0 +1,98 @@
+{
+  "version": "1.0.0",
+  "lastUpdated": "2025-11-25T04:36:25.130Z",
+  "preferences": {
+    "codingStyle": {
+      "language": "TypeScript",
+      "framework": "Node.js",
+      "conventions": [
+        "Use ES Modules",
+        "Prefer async/await over callbacks",
+        "Use explicit types",
+        "Follow clean code principles"
+      ],
+      "preferences": {
+        "indentation": "spaces",
+        "spacesPerIndent": 2,
+        "quotes": "single",
+        "semicolons": true,
+        "trailingComma": true
+      }
+    },
+    "projectType": "builder",
+    "qualityStandards": [
+      "Write tests for critical functionality",
+      "Document public APIs",
+      "Handle errors gracefully",
+      "Follow SOLID principles"
+    ],
+    "communicationStyle": "concise",
+    "aiAssistanceLevel": "moderate"
+  },
+  "projects": [
+    {
+      "name": "Builder App",
+      "description": "Local-first AI application builder using LLAMA models",
+      "techStack": [
+        "Node.js",
+        "TypeScript",
+        "Express",
+        "Ollama",
+        "Letta"
+      ],
+      "currentPhase": "Pack 11 - Local LLAMA Enhancements",
+      "requirements": [
+        "Unlimited context through Letta",
+        "Personal context repository",
+        "Self-improvement loops",
+        "Qwen optimization",
+        "Context compression"
+      ],
+      "architecture": "Hybrid compute with local-first strategy",
+      "patterns": [
+        "Provider pattern",
+        "Service layer",
+        "Memory hierarchy"
+      ]
+    }
+  ],
+  "knowledge": [
+    {
+      "domain": "local-first-ai",
+      "content": "Focus on local LLAMA models (Qwen 2.5 Coder 7B, Gemma 3 1B) with cloud fallback. Use Letta for unlimited context, personal context for personalization, and self-improvement for quality.",
+      "tags": [
+        "ai",
+        "local-first",
+        "llama",
+        "letta"
+      ],
+      "lastUpdated": "2025-11-25T04:36:25.122Z"
+    },
+    {
+      "domain": "coding-standards",
+      "content": "Follow Qodo-integration rules: deterministic, consistent, lint-friendly, explicit code. Avoid unused imports, dead code, inconsistent naming.",
+      "tags": [
+        "coding",
+        "standards",
+        "quality"
+      ],
+      "lastUpdated": "2025-11-25T04:36:25.122Z"
+    }
+  ],
+  "history": [
+    {
+      "date": "2025-11-25",
+      "learnings": [
+        "Implementing Pack 11 for local-first LLAMA enhancements",
+        "Using Letta for unlimited context",
+        "Building personal context repository"
+      ],
+      "decisions": [
+        "Prioritize Pack 11 over Pack 10 for local-first strategy",
+        "Use Letta memory system as primary context management",
+        "Implement self-improvement loops for quality enhancement"
+      ],
+      "context": "Phase 1 of Pack 11 implementation"
+    }
+  ]
+}

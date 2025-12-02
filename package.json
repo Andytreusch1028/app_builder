@@ -1,0 +1,71 @@
+{
+  "name": "coding-ai-platform-v2",
+  "version": "1.0.0",
+  "description": "Hybrid AI Coding Platform with Local and Cloud Models",
+  "type": "module",
+  "main": "dist/index.js",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "build": "tsc && node scripts/copy-public.js",
+    "dev": "tsc && node scripts/copy-public.js && node --watch dist/index.js",
+    "start": "node dist/index.js",
+    "start:all": "node scripts/start-all.js",
+    "check:tech": "node scripts/check-technologies.js",
+    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
+    "test:watch": "node --experimental-vm-modules node_modules/jest/bin/jest.js --watch",
+    "test:coverage": "node --experimental-vm-modules node_modules/jest/bin/jest.js --coverage",
+    "test:providers": "tsc && node dist/scripts/test-providers.js",
+    "test:local": "tsc && node dist/scripts/test-local-model.js",
+    "test:ollama": "tsc && node dist/scripts/test-ollama.js",
+    "test:integration": "tsc && node dist/scripts/test-integration.js",
+    "test:multi-model": "tsc && node dist/scripts/test-multi-model.js",
+    "test:real-agent": "tsc && node dist/scripts/test-real-agent.js",
+    "demo:multi-model": "tsc && node dist/scripts/demo-multi-model.js",
+    "demo:agent": "tsc && node dist/scripts/demo-real-agent.js",
+    "interactive:agent": "tsc && node dist/scripts/interactive-agent-test.js",
+    "stress:agent": "tsc && node dist/scripts/stress-test-agent.js",
+    "diagnose:ollama": "tsc && node dist/scripts/diagnose-ollama.js",
+    "pre-flight": "tsc && node dist/scripts/pre-flight-check.js",
+    "post-pack": "tsc && node dist/scripts/post-pack-validation.js",
+    "clean": "rimraf dist"
+  },
+  "keywords": [
+    "ai",
+    "coding",
+    "hybrid",
+    "local-models",
+    "cloud-ai"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.70.1",
+    "@google/generative-ai": "^0.24.1",
+    "@langchain/core": "^1.1.0",
+    "@langchain/langgraph": "^1.0.2",
+    "@letta-ai/letta-client": "^1.1.2",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.5",
+    "@types/node": "^24.10.1",
+    "@types/ws": "^8.18.1",
+    "axios": "^1.13.2",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.3",
+    "express": "^5.1.0",
+    "langchain": "^1.1.1",
+    "node-llama-cpp": "^3.14.2",
+    "openai": "^6.9.1",
+    "typescript": "^5.9.3",
+    "ws": "^8.18.3"
+  },
+  "devDependencies": {
+    "@types/jest": "^30.0.0",
+    "@types/supertest": "^6.0.3",
+    "jest": "^30.2.0",
+    "supertest": "^7.1.4",
+    "ts-jest": "^29.4.5",
+    "ts-node": "^10.9.2"
+  }
+}

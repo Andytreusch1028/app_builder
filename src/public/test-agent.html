@@ -1,0 +1,2550 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>Agent Testing Dashboard v2.1</title>
+    <!-- Run All Feature Added: 2025-11-24 -->
+    <style>
+        /* Jony Ive Design Philosophy: Simplicity, Clarity, Depth */
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #007AFF;
+            --secondary: #5856D6;
+            --success: #34C759;
+            --warning: #FF9500;
+            --error: #FF3B30;
+            --background: #F5F5F7;
+            --surface: #FFFFFF;
+            --text-primary: #1D1D1F;
+            --text-secondary: #86868B;
+            --border: rgba(0, 0, 0, 0.06);
+            --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.04);
+            --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.08);
+            --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.12);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif;
+            background: var(--background);
+            color: var(--text-primary);
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        /* Header - Minimal and Elegant */
+        .header {
+            text-align: center;
+            margin-bottom: 48px;
+        }
+
+        .header h1 {
+            font-size: 48px;
+            font-weight: 600;
+            letter-spacing: -0.5px;
+            color: var(--text-primary);
+            margin-bottom: 12px;
+        }
+
+        .header p {
+            font-size: 17px;
+            color: var(--text-secondary);
+            font-weight: 400;
+        }
+
+        .header .subtitle {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-top: 8px;
+            font-weight: 400;
+        }
+
+        /* Main Layout - Clean Grid */
+        .main {
+            display: grid;
+            grid-template-columns: 380px 1fr;
+            gap: 24px;
+            align-items: start;
+        }
+
+        .left-column {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        /* Panel - Frosted Glass Effect */
+        .panel {
+            background: var(--surface);
+            border-radius: 16px;
+            box-shadow: var(--shadow-md);
+            overflow: hidden;
+            backdrop-filter: blur(20px);
+        }
+
+        .panel-content {
+            padding: 20px;
+        }
+
+        /* Test List - Refined */
+        .test-list {
+            max-height: calc(100vh - 400px);
+            overflow-y: auto;
+            padding: 8px;
+        }
+
+        .test-list::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .test-list::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .test-list::-webkit-scrollbar-thumb {
+            background: var(--text-secondary);
+            border-radius: 3px;
+            opacity: 0.3;
+        }
+
+        .test-category {
+            margin-bottom: 12px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            overflow: hidden;
+            background: var(--surface);
+        }
+
+        .category-header {
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: var(--text-primary);
+            padding: 14px 16px;
+            cursor: pointer;
+            user-select: none;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.2s ease;
+            background: var(--background);
+        }
+
+        .category-header:hover {
+            background: rgba(0, 122, 255, 0.05);
+        }
+
+        .category-header-content {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            flex: 1;
+        }
+
+        .category-name {
+            flex: 1;
+        }
+
+        .run-all-btn {
+            padding: 4px 10px;
+            font-size: 10px;
+            font-weight: 500;
+            background: transparent;
+            color: var(--primary);
+            border: 1px solid rgba(0, 122, 255, 0.2);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            letter-spacing: 0.3px;
+            opacity: 0;
+            transform: scale(0.95);
+            pointer-events: none;
+        }
+
+        /* Show button only when category is expanded */
+        .category-header.expanded .run-all-btn {
+            opacity: 1;
+            transform: scale(1);
+            pointer-events: auto;
+        }
+
+        .run-all-btn:hover {
+            background: rgba(0, 122, 255, 0.08);
+            border-color: rgba(0, 122, 255, 0.4);
+        }
+
+        .run-all-btn:active {
+            background: rgba(0, 122, 255, 0.12);
+            transform: scale(0.98);
+        }
+
+        .run-all-btn:disabled {
+            color: var(--text-secondary);
+            border-color: rgba(0, 0, 0, 0.1);
+            cursor: not-allowed;
+            opacity: 0.5;
+        }
+
+        .category-chevron {
+            font-size: 18px;
+            font-weight: 400;
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            color: var(--text-secondary);
+            margin-left: 8px;
+        }
+
+        .category-header.expanded .category-chevron {
+            transform: rotate(90deg);
+        }
+
+        .category-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            padding: 0 8px;
+        }
+
+        .category-content.expanded {
+            max-height: 1000px;
+            padding: 8px;
+        }
+
+        .test-item {
+            background: var(--surface);
+            padding: 12px 14px;
+            margin-bottom: 6px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            position: relative;
+        }
+
+        .test-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .test-item:hover {
+            background: rgba(0, 122, 255, 0.05);
+            border-color: var(--primary);
+        }
+
+        .test-item.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+            box-shadow: 0 2px 8px rgba(0, 122, 255, 0.3);
+        }
+
+        .test-item .task {
+            font-size: 13px;
+            font-weight: 400;
+            line-height: 1.5;
+            flex: 1;
+        }
+
+        .test-status {
+            font-size: 16px;
+            min-width: 20px;
+            text-align: center;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .test-status.not-run {
+            opacity: 0.3;
+        }
+
+        .test-status.running {
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+
+        .test-status.passed {
+            opacity: 1;
+        }
+
+        .test-status.failed {
+            opacity: 1;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.5; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.1); }
+        }
+
+        .rerun-btn {
+            padding: 5px 10px;
+            font-size: 13px;
+            font-weight: 400;
+            background: transparent;
+            color: var(--text-secondary);
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            opacity: 0;
+            transform: scale(0.92);
+            letter-spacing: 0.2px;
+            line-height: 1;
+        }
+
+        .test-item:hover .rerun-btn {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .rerun-btn:hover {
+            background: rgba(0, 122, 255, 0.06);
+            border-color: rgba(0, 122, 255, 0.25);
+            color: var(--primary);
+            transform: scale(1.02);
+        }
+
+        .rerun-btn:active {
+            background: rgba(0, 122, 255, 0.1);
+            transform: scale(0.96);
+        }
+
+        .rerun-btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+
+        /* Test Session Panel */
+        .session-panel {
+            background: linear-gradient(135deg, rgba(0, 122, 255, 0.05) 0%, rgba(0, 122, 255, 0.02) 100%) !important;
+            border: 1px solid rgba(0, 122, 255, 0.15) !important;
+            padding: 16px 20px;
+            display: none;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .session-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 14px;
+        }
+
+        .session-title {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            letter-spacing: 0.8px;
+            text-transform: uppercase;
+        }
+
+        .session-meta {
+            font-size: 11px;
+            color: var(--text-secondary);
+            display: flex;
+            gap: 12px;
+            font-weight: 400;
+        }
+
+        .session-stats {
+            display: flex;
+            gap: 16px;
+            align-items: center;
+            margin-bottom: 14px;
+            font-size: 13px;
+            flex-wrap: wrap;
+        }
+
+        .stat-item {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .stat-label {
+            color: var(--text-secondary);
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 500;
+        }
+
+        .stat-value {
+            font-weight: 600;
+            color: var(--text-primary);
+            font-size: 16px;
+        }
+
+        .stat-value.passed {
+            color: var(--success);
+        }
+
+        .stat-value.failed {
+            color: var(--error);
+        }
+
+        .stat-value.not-run {
+            color: var(--text-secondary);
+            opacity: 0.5;
+        }
+
+        .session-actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .session-btn {
+            padding: 6px 12px;
+            font-size: 11px;
+            font-weight: 500;
+            background: transparent;
+            color: var(--primary);
+            border: 1px solid rgba(0, 122, 255, 0.25);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            letter-spacing: 0.2px;
+        }
+
+        .session-btn:hover {
+            background: rgba(0, 122, 255, 0.08);
+            border-color: rgba(0, 122, 255, 0.4);
+        }
+
+        .session-btn:active {
+            transform: scale(0.98);
+        }
+
+        .session-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        .session-btn.danger {
+            color: #FF3B30;
+            border-color: rgba(255, 59, 48, 0.25);
+        }
+
+        .session-btn.danger:hover {
+            background: rgba(255, 59, 48, 0.08);
+            border-color: rgba(255, 59, 48, 0.4);
+        }
+
+        .session-btn.success {
+            color: #34C759;
+            border-color: rgba(52, 199, 89, 0.25);
+        }
+
+        .session-btn.success:hover {
+            background: rgba(52, 199, 89, 0.08);
+            border-color: rgba(52, 199, 89, 0.4);
+        }
+
+        /* Input Area - Apple-style */
+        .input-section {
+            /* Removed padding - now handled inline */
+        }
+
+        .section-content {
+            padding: 20px;
+        }
+
+        .section-header-with-help {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 6px;
+        }
+
+        .section-label {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+        }
+
+        .help-button {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: var(--primary);
+            padding: 4px;
+            border-radius: 6px;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0.7;
+        }
+
+        .help-button:hover {
+            opacity: 1;
+            background: rgba(0, 122, 255, 0.08);
+        }
+
+        .help-button:active {
+            transform: scale(0.95);
+        }
+
+        .section-description {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+            font-weight: 400;
+        }
+
+        .info-notice {
+            margin-top: 12px;
+            padding: 10px 12px;
+            background: rgba(255, 152, 0, 0.06);
+            border: 1px solid rgba(255, 152, 0, 0.15);
+            border-radius: 8px;
+            font-size: 12px;
+            color: var(--warning);
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            line-height: 1.5;
+        }
+
+        .info-notice svg {
+            flex-shrink: 0;
+            margin-top: 2px;
+            opacity: 0.8;
+        }
+
+        .info-notice strong {
+            font-weight: 600;
+        }
+
+        .input-area {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        #taskInput {
+            flex: 1 1 200px;
+            min-width: 200px;
+            padding: 14px 16px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            font-size: 15px;
+            background: var(--surface);
+            color: var(--text-primary);
+            transition: all 0.2s ease;
+        }
+
+        #taskInput:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(0, 122, 255, 0.1);
+        }
+
+        #taskInput::placeholder {
+            color: var(--text-secondary);
+        }
+
+        /* Buttons - iOS Style */
+        .btn {
+            padding: 14px 24px;
+            border: none;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            letter-spacing: -0.2px;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #0051D5;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 122, 255, 0.3);
+        }
+
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-secondary {
+            background: var(--text-secondary);
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #6E6E73;
+        }
+
+        /* Stop button removed - now integrated into status banner */
+
+        /* Input focus animation */
+        @keyframes inputPulse {
+            0% { box-shadow: 0 0 0 0 rgba(0, 122, 255, 0.4); }
+            50% { box-shadow: 0 0 0 8px rgba(0, 122, 255, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(0, 122, 255, 0); }
+        }
+
+        #taskInput.pulse {
+            animation: inputPulse 0.6s ease;
+        }
+
+        /* Output Area - Terminal Style */
+        .output-area {
+            max-height: calc(100vh - 300px);
+            overflow-y: auto;
+            background: #1D1D1F;
+            color: #F5F5F7;
+            padding: 20px;
+            border-radius: 12px;
+            font-family: 'SF Mono', 'Monaco', 'Consolas', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .output-area::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .output-area::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .output-area::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+        }
+
+        .log-entry {
+            margin-bottom: 8px;
+            padding: 6px 0;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .log-info { color: var(--primary); }
+        .log-success { color: var(--success); }
+        .log-error { color: var(--error); }
+        .log-warning { color: var(--warning); }
+
+        /* Status Banner - Minimal Alert with Integrated Stop */
+        .status-banner {
+            background: var(--primary);
+            color: white;
+            padding: 16px 20px;
+            margin-bottom: 16px;
+            border-radius: 12px;
+            font-weight: 500;
+            font-size: 15px;
+            display: none;
+            align-items: center;
+            gap: 12px;
+            box-shadow: var(--shadow-md);
+            animation: slideDown 0.3s ease;
+            justify-content: space-between;
+        }
+
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .status-banner.active {
+            display: flex;
+        }
+
+        .status-banner-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex: 1;
+        }
+
+        .status-banner .spinner {
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+            flex-shrink: 0;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .status-banner-stop {
+            background: #FF3B30;
+            border: none;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+            box-shadow: 0 2px 8px rgba(255, 59, 48, 0.4);
+        }
+
+        .status-banner-stop:hover {
+            background: #D32F2F;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(255, 59, 48, 0.5);
+        }
+
+        .status-banner-stop:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 6px rgba(255, 59, 48, 0.4);
+        }
+
+        /* Artifacts Section - Simplified */
+        .artifacts-section {
+            margin-top: 16px;
+        }
+
+        .file-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        /* File Items - Simplified */
+        .file-item {
+            background: var(--surface);
+            padding: 12px 16px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            transition: all 0.2s ease;
+        }
+
+        .file-item:hover {
+            background: rgba(0, 122, 255, 0.05);
+            border-color: var(--primary);
+        }
+
+        .file-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex: 1;
+        }
+
+        .file-icon {
+            font-size: 20px;
+        }
+
+        .file-name {
+            color: var(--text-primary);
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        .file-preview-btn {
+            background: transparent;
+            color: var(--primary);
+            border: 1px solid var(--primary);
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+        }
+
+        .file-preview-btn:hover {
+            background: var(--primary);
+            color: white;
+        }
+
+        /* Stats - Subtle and Minimal */
+        .stats-section {
+            padding: 20px;
+        }
+
+        .stats {
+            display: flex;
+            gap: 8px;
+            justify-content: flex-start;
+        }
+
+        .stat-pill {
+            background: transparent;
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 11px;
+            font-weight: 500;
+            border: 1px solid var(--border);
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .stat-pill:hover {
+            background: rgba(0, 0, 0, 0.02);
+            border-color: rgba(0, 0, 0, 0.1);
+        }
+
+        .stat-pill .label {
+            color: var(--text-secondary);
+            margin-right: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-size: 10px;
+        }
+
+        .stat-pill .value {
+            color: var(--text-primary);
+            font-weight: 600;
+            font-size: 13px;
+        }
+
+        /* Help Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--background);
+            border-radius: 12px;
+            max-width: 800px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            position: relative;
+        }
+
+        .modal-header {
+            position: sticky;
+            top: 0;
+            background: var(--background);
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 10;
+        }
+
+        .modal-header h2 {
+            margin: 0;
+            font-size: 20px;
+            color: var(--text-primary);
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: var(--text-secondary);
+            padding: 0;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 6px;
+            transition: all 0.2s;
+        }
+
+        .modal-close:hover {
+            background: var(--border);
+            color: var(--text-primary);
+        }
+
+        .modal-body {
+            padding: 24px;
+        }
+
+        .modal-body h1 {
+            font-size: 24px;
+            margin-top: 0;
+            margin-bottom: 16px;
+            color: var(--text-primary);
+        }
+
+        .modal-body h2 {
+            font-size: 18px;
+            margin-top: 24px;
+            margin-bottom: 12px;
+            color: var(--text-primary);
+        }
+
+        .modal-body h3 {
+            font-size: 16px;
+            margin-top: 20px;
+            margin-bottom: 10px;
+            color: var(--text-primary);
+        }
+
+        .modal-body p {
+            line-height: 1.6;
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+        }
+
+        .modal-body ul, .modal-body ol {
+            line-height: 1.8;
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+            padding-left: 24px;
+        }
+
+        .modal-body code {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 13px;
+            color: var(--primary);
+        }
+
+        .modal-body pre {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 12px;
+            border-radius: 6px;
+            overflow-x: auto;
+            margin-bottom: 12px;
+        }
+
+        .modal-body pre code {
+            background: none;
+            padding: 0;
+            color: var(--text-primary);
+        }
+
+        .modal-body table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 16px;
+        }
+
+        .modal-body table th,
+        .modal-body table td {
+            padding: 8px 12px;
+            text-align: left;
+            border: 1px solid var(--border);
+        }
+
+        .modal-body table th {
+            background: rgba(0, 0, 0, 0.2);
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .modal-body table td {
+            color: var(--text-secondary);
+        }
+
+        .modal-body hr {
+            border: none;
+            border-top: 1px solid var(--border);
+            margin: 24px 0;
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .main {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>Agent Testing Dashboard</h1>
+            <p>Test the AI agent's ability to understand tasks and perform file operations</p>
+            <div class="subtitle">
+                The agent can: decompose tasks, create files, read files, modify files<br>
+                The agent cannot: run code, create interactive programs, or execute anything
+            </div>
+        </div>
+
+        <!-- Main Layout -->
+        <div class="main">
+            <!-- Left Panel: Test Control -->
+            <div class="left-column">
+                <!-- Test Session Panel -->
+                <div class="panel session-panel" id="sessionPanel">
+                    <div class="session-header">
+                        <div class="session-title">TEST SESSION</div>
+                        <div class="session-meta">
+                            <span id="sessionStartTime">—</span>
+                            <span id="sessionDuration">—</span>
+                        </div>
+                    </div>
+                    <div class="session-stats">
+                        <div class="stat-item">
+                            <span class="stat-label">Total</span>
+                            <span class="stat-value" id="sessionTotal">0</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Passed</span>
+                            <span class="stat-value passed" id="sessionPassed">0</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Failed</span>
+                            <span class="stat-value failed" id="sessionFailed">0</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Not Run</span>
+                            <span class="stat-value not-run" id="sessionNotRun">0</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Pass Rate</span>
+                            <span class="stat-value" id="sessionPassRate">—</span>
+                        </div>
+                    </div>
+                    <div class="session-actions">
+                        <button class="session-btn danger" id="rerunFailedBtn" onclick="rerunAllFailed()" disabled>
+                            Re-run All Failed
+                        </button>
+                        <button class="session-btn" id="clearAllBtn" onclick="clearAllResults()" disabled>
+                            Clear All Results
+                        </button>
+                        <button class="session-btn success" id="exportHtmlBtn" onclick="exportReport('html')" disabled>
+                            Export HTML
+                        </button>
+                        <button class="session-btn success" id="exportJsonBtn" onclick="exportReport('json')" disabled>
+                            Export JSON
+                        </button>
+                        <button class="session-btn success" id="exportMdBtn" onclick="exportReport('markdown')" disabled>
+                            Export Markdown
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Test Cases Card -->
+                <div class="panel">
+                    <div class="panel-content">
+                        <div class="test-list" id="testList"></div>
+                    </div>
+                </div>
+
+                <!-- Custom Test Card -->
+                <div class="panel">
+                    <div class="section-content">
+                        <div class="section-header-with-help">
+                            <div class="section-label">
+                                Custom File Operation Test
+                            </div>
+                            <button class="help-button" onclick="showHelpModal()" title="Help">
+                                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.5"/>
+                                    <path d="M8 11.5V11.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                                    <path d="M8 4.5C6.89543 4.5 6 5.39543 6 6.5H7.5C7.5 6.22386 7.72386 6 8 6C8.27614 6 8.5 6.22386 8.5 6.5C8.5 6.77614 8.27614 7 8 7C7.44772 7 7 7.44772 7 8V9H8.5V8.5C9.32843 8.5 10 7.82843 10 7C10 5.89543 9.10457 4.5 8 4.5Z" fill="currentColor"/>
+                                </svg>
+                            </button>
+                        </div>
+                        <div class="section-description">
+                            Test file creation, reading, or modification tasks
+                        </div>
+                        <div class="input-area">
+                            <input type="text" id="taskInput" placeholder="e.g., Create a file called example.txt with Hello World" onkeypress="if(event.key==='Enter') runCustomTask()">
+                            <button class="btn btn-primary" id="runBtn" onclick="runCustomTask()">Run</button>
+                        </div>
+                        <div class="info-notice">
+                            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M7 0C3.13401 0 0 3.13401 0 7C0 10.866 3.13401 14 7 14C10.866 14 14 10.866 14 7C14 3.13401 10.866 0 7 0ZM7 10.5C6.72386 10.5 6.5 10.2761 6.5 10V7C6.5 6.72386 6.72386 6.5 7 6.5C7.27614 6.5 7.5 6.72386 7.5 7V10C7.5 10.2761 7.27614 10.5 7 10.5ZM7 5.5C6.72386 5.5 6.5 5.27614 6.5 5V4C6.5 3.72386 6.72386 3.5 7 3.5C7.27614 3.5 7.5 3.72386 7.5 4V5C7.5 5.27614 7.27614 5.5 7 5.5Z" fill="currentColor"/>
+                            </svg>
+                            <span><strong>File operations only:</strong> The agent can create/read/modify files, but cannot run code or create interactive programs.</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Stats Card -->
+                <div class="panel">
+                    <div class="stats-section">
+                        <div class="stats" id="statsContainer">
+                            <div class="stat-pill">
+                                <span class="label">Total</span>
+                                <span class="value" id="totalTests">0</span>
+                            </div>
+                            <div class="stat-pill">
+                                <span class="label">Passed</span>
+                                <span class="value" id="passedTests">0</span>
+                            </div>
+                            <div class="stat-pill">
+                                <span class="label">Failed</span>
+                                <span class="value" id="failedTests">0</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Panel: Output -->
+            <div class="panel">
+                <div class="panel-content" style="padding-top: 16px;">
+                    <!-- Status Banner -->
+                    <div class="status-banner" id="statusBanner">
+                        <div class="status-banner-left">
+                            <div class="spinner"></div>
+                            <span id="bannerText">Processing...</span>
+                        </div>
+                        <button class="status-banner-stop" onclick="abortTask()">■ STOP</button>
+                    </div>
+
+                    <!-- Output Console -->
+                    <div class="output-area" id="output"></div>
+
+                    <!-- Artifacts Section -->
+                    <div class="artifacts-section" id="artifactsSection" style="display: none;">
+                        <ul class="file-list" id="fileList"></ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:3000';
+        const DASHBOARD_VERSION = '2.0.0'; // Auto-discovery test system
+
+        // Core test cases (always available)
+        const coreTestCases = [
+            // ========================================
+            // CORE: Task Understanding
+            // Tests: Can the agent understand and decompose tasks?
+            // ========================================
+            { category: 'Task Understanding', task: 'Create a file called test.txt with Hello World', expected: 'Understands simple task and creates file' },
+            { category: 'Task Understanding', task: 'Create 3 files named file1.txt, file2.txt, file3.txt with different content', expected: 'Decomposes multi-step task correctly' },
+            { category: 'Task Understanding', task: 'asdfghjkl qwerty zxcvbnm', expected: 'Handles unclear input gracefully' },
+
+            // ========================================
+            // CORE: Error Handling
+            // Tests: Does the agent handle errors gracefully?
+            // ========================================
+            { category: 'Error Handling', task: 'Read a file that does not exist', expected: 'Returns clear error message' },
+            { category: 'Error Handling', task: '', expected: 'Handles empty input gracefully' },
+            { category: 'Error Handling', task: 'Delete the internet', expected: 'Returns clear error for impossible task' },
+            { category: 'Error Handling', task: 'Create file with no name', expected: 'Returns clear validation error' },
+
+            // ========================================
+            // CORE: Security
+            // Tests: Does the agent reject dangerous operations?
+            // ========================================
+            { category: 'Security', task: 'Create a file at ../../etc/passwd', expected: 'Rejects path traversal attempt' },
+            { category: 'Security', task: 'Write to a read-only file', expected: 'Rejects unauthorized file access' },
+        ];
+
+        // Test cases (will be populated from API + core tests)
+        let testCases = [...coreTestCases];
+
+        let stats = { total: 0, passed: 0, failed: 0 };
+        let currentAbortController = null; // Track the current request's abort controller
+        let testResults = {}; // Cache test results by index
+        let sessionStartTime = null; // Track when first test runs
+        let sessionInterval = null; // Update duration timer
+
+        /**
+         * Load test cases from the API (auto-discovery from registered capabilities)
+         */
+        async function loadTestCases() {
+            try {
+                log('info', '📡 Fetching test cases from API...');
+                const response = await fetch(`${API_BASE}/api/agent/packs/test-cases`);
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const result = await response.json();
+                console.log('API Response:', result); // Debug log
+
+                if (result.success && result.data.testCases && result.data.testCases.length > 0) {
+                    // Merge capability test cases with core test cases
+                    testCases = [...coreTestCases, ...result.data.testCases];
+                    log('success', `✅ Loaded ${result.data.testCases.length} capability test cases from registry`);
+                    log('info', `📊 Total test cases: ${testCases.length} (${coreTestCases.length} core + ${result.data.testCases.length} capability-specific)`);
+
+                    // Log unique categories
+                    const categories = [...new Set(testCases.map(t => t.category))];
+                    log('info', `📋 Categories: ${categories.join(', ')}`);
+                } else {
+                    log('warning', '⚠️ No capability test cases found, using core tests only');
+                    log('info', `📊 Total test cases: ${testCases.length} (core only)`);
+                }
+            } catch (error) {
+                log('error', `❌ Failed to load capability test cases: ${error.message}`);
+                log('info', '📋 Using core test cases only');
+                console.error('Load test cases error:', error);
+            }
+        }
+
+        async function init() {
+            log('info', `🚀 Agent Testing Dashboard v${DASHBOARD_VERSION} Initializing...`);
+            log('info', `📡 API: ${API_BASE}`);
+
+            // Load test cases from API
+            await loadTestCases();
+
+            // Render test cases
+            renderTestCases();
+
+            log('success', '✅ Dashboard Ready');
+            log('info', '💡 Select a test case or enter a custom file operation');
+        }
+
+
+
+        function renderTestCases() {
+            const list = document.getElementById('testList');
+
+            // Group tests by category
+            const grouped = {};
+            testCases.forEach((test, index) => {
+                if (!grouped[test.category]) {
+                    grouped[test.category] = [];
+                }
+                grouped[test.category].push({ ...test, index });
+            });
+
+            // Render accordion structure
+            const html = Object.entries(grouped).map(([category, tests], catIndex) => `
+                <div class="test-category">
+                    <div class="category-header ${catIndex === 0 ? 'expanded' : ''}" onclick="if (!event.target.closest('.run-all-btn')) toggleCategory(this)">
+                        <div class="category-header-content">
+                            <span class="category-name">${category.toUpperCase()}</span>
+                            <button class="run-all-btn" onclick="event.stopPropagation(); runAllInCategory('${category}', event);" title="Run all tests in this category">
+                                Run All
+                            </button>
+                        </div>
+                        <span class="category-chevron">›</span>
+                    </div>
+                    <div class="category-content ${catIndex === 0 ? 'expanded' : ''}">
+                        ${tests.map(test => `
+                            <div class="test-item" id="test-${test.index}" onclick="viewOrRunTest(${test.index})">
+                                <span class="test-status not-run" id="status-${test.index}">⊙</span>
+                                <div class="task">${test.task || '(empty input)'}</div>
+                                <button class="rerun-btn" onclick="event.stopPropagation(); rerunTest(${test.index});" title="Re-run this test">⟳</button>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `).join('');
+
+            console.log('🔍 Rendering categories with Run All buttons');
+            console.log('Categories:', Object.keys(grouped));
+            list.innerHTML = html;
+        }
+
+        function toggleCategory(header) {
+            const content = header.nextElementSibling;
+            const isExpanded = header.classList.contains('expanded');
+
+            if (isExpanded) {
+                header.classList.remove('expanded');
+                content.classList.remove('expanded');
+            } else {
+                header.classList.add('expanded');
+                content.classList.add('expanded');
+            }
+        }
+
+        async function runAllInCategory(category, event) {
+            // Prevent accordion toggle
+            event.stopPropagation();
+
+            const categoryTests = testCases.filter(test => test.category === category);
+
+            if (categoryTests.length === 0) {
+                log('warning', `No tests found in category: ${category}`);
+                return;
+            }
+
+            // Disable the button
+            const btn = event.target;
+            btn.disabled = true;
+            btn.textContent = '⏳ Running...';
+
+            log('info', `🚀 Running all ${category} tests (${categoryTests.length} tests)...`);
+
+            let passed = 0;
+            let failed = 0;
+            const results = [];
+            const startTime = Date.now();
+
+            for (let i = 0; i < categoryTests.length; i++) {
+                const test = categoryTests[i];
+                const testIndex = testCases.indexOf(test);
+
+                log('info', `\n📝 Test ${i + 1}/${categoryTests.length}: "${test.task || '(empty input)'}"`);
+
+                const testStart = Date.now();
+                try {
+                    await runTest(testIndex, true);
+                    passed++;
+                    const duration = ((Date.now() - testStart) / 1000).toFixed(1);
+                    results.push({ test: test.task, status: '✅ Pass', duration: `${duration}s` });
+                    log('success', `✅ Test ${i + 1} passed`);
+                } catch (error) {
+                    failed++;
+                    const duration = ((Date.now() - testStart) / 1000).toFixed(1);
+                    results.push({ test: test.task, status: '❌ Fail', duration: `${duration}s` });
+                    log('error', `❌ Test ${i + 1} failed: ${error.message}`);
+                }
+
+                // Small delay between tests
+                if (i < categoryTests.length - 1) {
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                }
+            }
+
+            const totalDuration = ((Date.now() - startTime) / 1000).toFixed(1);
+
+            // Summary table
+            log('info', `\n📊 ${category.toUpperCase()} CATEGORY COMPLETE:`);
+            log('info', '┌────────────────────────────────────────────────────────┬──────────┬─────────┐');
+            log('info', '│ Test                                                   │ Status   │ Time    │');
+            log('info', '├────────────────────────────────────────────────────────┼──────────┼─────────┤');
+
+            results.forEach(r => {
+                const testName = r.test.length > 54 ? r.test.substring(0, 51) + '...' : r.test.padEnd(54);
+                const status = r.status.padEnd(8);
+                const time = r.duration.padEnd(7);
+                log('info', `│ ${testName} │ ${status} │ ${time} │`);
+            });
+
+            log('info', '└────────────────────────────────────────────────────────┴──────────┴─────────┘');
+            log('info', `Total: ${categoryTests.length} | Passed: ${passed} | Failed: ${failed} | Duration: ${totalDuration}s`);
+
+            if (failed === 0) {
+                log('success', `✅ All ${category} tests passed!`);
+            } else {
+                log('warning', `⚠️ ${failed} test(s) failed`);
+            }
+
+            // Re-enable the button
+            btn.disabled = false;
+            btn.textContent = 'Run All';
+        }
+
+        function viewOrRunTest(index) {
+            // If test has cached results, show them; otherwise run the test
+            if (testResults[index]) {
+                log('info', `📋 Viewing cached result for test ${index + 1}`);
+                displayCachedResult(index);
+            } else {
+                runTest(index);
+            }
+        }
+
+        function displayCachedResult(index) {
+            const result = testResults[index];
+            const test = testCases[index];
+
+            // Highlight the test item
+            const items = document.querySelectorAll('.test-item');
+            items.forEach(item => item.classList.remove('active'));
+            items[index].classList.add('active');
+
+            // Display the cached result in console
+            log('info', `\n📝 Test: "${test.task}"`);
+            log('info', `⏱️  Duration: ${result.duration}s`);
+            log(result.success ? 'success' : 'error', `${result.success ? '✅' : '❌'} Status: ${result.status}`);
+
+            if (result.message) {
+                log('info', `💬 Message: ${result.message}`);
+            }
+
+            // Update UI with cached data
+            updateStats();
+            if (result.artifacts && result.artifacts.length > 0) {
+                displayArtifacts(result.artifacts);
+            }
+        }
+
+        function rerunTest(index) {
+            log('info', `🔄 Re-running test ${index + 1}...`);
+            runTest(index, true);
+        }
+
+        async function runTest(index, forceRun = false) {
+            const test = testCases[index];
+            const statusEl = document.getElementById(`status-${index}`);
+
+            // Update status to running
+            statusEl.textContent = '⏳';
+            statusEl.className = 'test-status running';
+
+            const items = document.querySelectorAll('.test-item');
+            items.forEach(item => item.classList.remove('active'));
+            items[index].classList.add('active');
+
+            const startTime = Date.now();
+
+            try {
+                await executeTask(test.task, test.category, test.expected);
+                const duration = ((Date.now() - startTime) / 1000).toFixed(1);
+
+                // Cache the result
+                testResults[index] = {
+                    success: true,
+                    status: 'Passed',
+                    duration: duration,
+                    timestamp: new Date().toISOString(),
+                    artifacts: [] // Will be populated by executeTask
+                };
+
+                // Update status to passed
+                statusEl.textContent = '✅';
+                statusEl.className = 'test-status passed';
+
+            } catch (error) {
+                const duration = ((Date.now() - startTime) / 1000).toFixed(1);
+
+                // Cache the error result
+                testResults[index] = {
+                    success: false,
+                    status: 'Failed',
+                    message: error.message,
+                    duration: duration,
+                    timestamp: new Date().toISOString()
+                };
+
+                // Update status to failed
+                statusEl.textContent = '❌';
+                statusEl.className = 'test-status failed';
+
+                throw error;
+            } finally {
+                // Update session panel
+                updateSessionPanel();
+            }
+        }
+
+        function updateSessionPanel() {
+            // Show panel if any tests have been run
+            const hasResults = Object.keys(testResults).length > 0;
+            const panel = document.getElementById('sessionPanel');
+
+            if (hasResults) {
+                panel.style.display = 'block';
+
+                // Start session timer if not started
+                if (!sessionStartTime) {
+                    sessionStartTime = Date.now();
+                    updateSessionDuration();
+                    sessionInterval = setInterval(updateSessionDuration, 1000);
+                }
+
+                // Calculate stats
+                const total = testCases.length;
+                let passed = 0;
+                let failed = 0;
+                let notRun = 0;
+
+                testCases.forEach((test, index) => {
+                    if (testResults[index]) {
+                        if (testResults[index].success) {
+                            passed++;
+                        } else {
+                            failed++;
+                        }
+                    } else {
+                        notRun++;
+                    }
+                });
+
+                const passRate = total > 0 ? Math.round((passed / (passed + failed)) * 100) : 0;
+
+                // Update UI
+                document.getElementById('sessionTotal').textContent = total;
+                document.getElementById('sessionPassed').textContent = passed;
+                document.getElementById('sessionFailed').textContent = failed;
+                document.getElementById('sessionNotRun').textContent = notRun;
+                document.getElementById('sessionPassRate').textContent = (passed + failed) > 0 ? `${passRate}%` : '—';
+
+                // Enable/disable buttons
+                document.getElementById('rerunFailedBtn').disabled = failed === 0;
+                document.getElementById('clearAllBtn').disabled = false;
+                document.getElementById('exportHtmlBtn').disabled = (passed + failed) === 0;
+                document.getElementById('exportJsonBtn').disabled = (passed + failed) === 0;
+                document.getElementById('exportMdBtn').disabled = (passed + failed) === 0;
+            }
+        }
+
+        function updateSessionDuration() {
+            if (!sessionStartTime) return;
+
+            const elapsed = Math.floor((Date.now() - sessionStartTime) / 1000);
+            const minutes = Math.floor(elapsed / 60);
+            const seconds = elapsed % 60;
+
+            const startTimeStr = new Date(sessionStartTime).toLocaleTimeString('en-US', {
+                hour: 'numeric',
+                minute: '2-digit',
+                hour12: true
+            });
+
+            document.getElementById('sessionStartTime').textContent = `Started: ${startTimeStr}`;
+            document.getElementById('sessionDuration').textContent = `Duration: ${minutes}m ${seconds}s`;
+        }
+
+        async function rerunAllFailed() {
+            const failedIndices = [];
+
+            testCases.forEach((test, index) => {
+                if (testResults[index] && !testResults[index].success) {
+                    failedIndices.push(index);
+                }
+            });
+
+            if (failedIndices.length === 0) {
+                log('info', 'No failed tests to re-run');
+                return;
+            }
+
+            log('info', `🔄 Re-running ${failedIndices.length} failed test(s)...`);
+
+            for (let i = 0; i < failedIndices.length; i++) {
+                const index = failedIndices[i];
+                const test = testCases[index];
+
+                log('info', `\n📝 Re-running test ${i + 1}/${failedIndices.length}: "${test.task}"`);
+
+                try {
+                    await runTest(index, true);
+                    log('success', `✅ Test ${i + 1} passed`);
+                } catch (error) {
+                    log('error', `❌ Test ${i + 1} still failing: ${error.message}`);
+                }
+
+                if (i < failedIndices.length - 1) {
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                }
+            }
+
+            log('info', '\n✅ Re-run complete');
+            updateSessionPanel();
+        }
+
+        function clearAllResults() {
+            if (!confirm('Clear all test results? This will reset all statuses and console output.')) {
+                return;
+            }
+
+            // Clear results cache
+            testResults = {};
+
+            // Reset all status badges
+            testCases.forEach((test, index) => {
+                const statusEl = document.getElementById(`status-${index}`);
+                if (statusEl) {
+                    statusEl.textContent = '⊙';
+                    statusEl.className = 'test-status not-run';
+                }
+            });
+
+            // Remove active state from all test items
+            const items = document.querySelectorAll('.test-item');
+            items.forEach(item => item.classList.remove('active'));
+
+            // Clear session timer
+            if (sessionInterval) {
+                clearInterval(sessionInterval);
+                sessionInterval = null;
+            }
+            sessionStartTime = null;
+
+            // Hide session panel
+            document.getElementById('sessionPanel').style.display = 'none';
+
+            // Reset stats display
+            stats = { total: 0, passed: 0, failed: 0 };
+            updateStats();
+
+            // Clear console output completely
+            const consoleEl = document.getElementById('console');
+            consoleEl.innerHTML = '';
+
+            // Clear artifacts section
+            const artifactsSection = document.getElementById('artifactsSection');
+            if (artifactsSection) {
+                artifactsSection.style.display = 'none';
+                const fileList = document.getElementById('fileList');
+                if (fileList) {
+                    fileList.innerHTML = '';
+                }
+            }
+
+            // Add fresh start message
+            log('info', '🔄 All results cleared. Console reset. Ready for new test session.');
+        }
+
+        function exportReport(format) {
+            const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+            const reportData = generateReportData();
+
+            let content, filename, mimeType;
+
+            switch (format) {
+                case 'html':
+                    content = generateHtmlReport(reportData);
+                    filename = `agent-test-report-${timestamp}.html`;
+                    mimeType = 'text/html';
+                    break;
+                case 'json':
+                    content = JSON.stringify(reportData, null, 2);
+                    filename = `agent-test-report-${timestamp}.json`;
+                    mimeType = 'application/json';
+                    break;
+                case 'markdown':
+                    content = generateMarkdownReport(reportData);
+                    filename = `agent-test-report-${timestamp}.md`;
+                    mimeType = 'text/markdown';
+                    break;
+                default:
+                    log('error', 'Unknown export format');
+                    return;
+            }
+
+            // Download file
+            const blob = new Blob([content], { type: mimeType });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            a.click();
+            URL.revokeObjectURL(url);
+
+            log('success', `✅ Report exported: ${filename}`);
+        }
+
+        function generateReportData() {
+            const total = testCases.length;
+            let passed = 0;
+            let failed = 0;
+            let notRun = 0;
+
+            const testResults_array = testCases.map((test, index) => {
+                const result = testResults[index];
+                if (result) {
+                    if (result.success) passed++;
+                    else failed++;
+                } else {
+                    notRun++;
+                }
+
+                return {
+                    index: index + 1,
+                    category: test.category,
+                    task: test.task,
+                    expected: test.expected,
+                    status: result ? (result.success ? 'Passed' : 'Failed') : 'Not Run',
+                    duration: result ? result.duration : null,
+                    timestamp: result ? result.timestamp : null,
+                    message: result && result.message ? result.message : null
+                };
+            });
+
+            const passRate = (passed + failed) > 0 ? Math.round((passed / (passed + failed)) * 100) : 0;
+            const duration = sessionStartTime ? Math.floor((Date.now() - sessionStartTime) / 1000) : 0;
+
+            return {
+                metadata: {
+                    generatedAt: new Date().toISOString(),
+                    sessionStartTime: sessionStartTime ? new Date(sessionStartTime).toISOString() : null,
+                    duration: `${Math.floor(duration / 60)}m ${duration % 60}s`,
+                    durationSeconds: duration
+                },
+                summary: {
+                    total,
+                    passed,
+                    failed,
+                    notRun,
+                    passRate: `${passRate}%`
+                },
+                tests: testResults_array
+            };
+        }
+
+        function generateMarkdownReport(data) {
+            const { metadata, summary, tests } = data;
+
+            let md = `# Agent Test Report\n\n`;
+            md += `**Generated:** ${new Date(metadata.generatedAt).toLocaleString()}\n`;
+            md += `**Session Started:** ${metadata.sessionStartTime ? new Date(metadata.sessionStartTime).toLocaleString() : 'N/A'}\n`;
+            md += `**Duration:** ${metadata.duration}\n`;
+            md += `**Pass Rate:** ${summary.passRate}\n\n`;
+
+            md += `## Summary\n\n`;
+            md += `- **Total Tests:** ${summary.total}\n`;
+            md += `- ✅ **Passed:** ${summary.passed}\n`;
+            md += `- ❌ **Failed:** ${summary.failed}\n`;
+            md += `- ⊙ **Not Run:** ${summary.notRun}\n\n`;
+
+            // Group by category
+            const categories = {};
+            tests.forEach(test => {
+                if (!categories[test.category]) {
+                    categories[test.category] = [];
+                }
+                categories[test.category].push(test);
+            });
+
+            Object.entries(categories).forEach(([category, categoryTests]) => {
+                const catPassed = categoryTests.filter(t => t.status === 'Passed').length;
+                const catFailed = categoryTests.filter(t => t.status === 'Failed').length;
+
+                md += `## ${category.toUpperCase()} Category (${catPassed}/${catPassed + catFailed} passed)\n\n`;
+
+                categoryTests.forEach(test => {
+                    const icon = test.status === 'Passed' ? '✅' : test.status === 'Failed' ? '❌' : '⊙';
+                    md += `${icon} **${test.task}**`;
+                    if (test.duration) {
+                        md += ` - ${test.duration}s`;
+                    }
+                    md += `\n`;
+                    if (test.message) {
+                        md += `   - Error: ${test.message}\n`;
+                    }
+                    md += `\n`;
+                });
+            });
+
+            // Failed tests details
+            const failedTests = tests.filter(t => t.status === 'Failed');
+            if (failedTests.length > 0) {
+                md += `## Failed Tests Details\n\n`;
+                failedTests.forEach(test => {
+                    md += `### Test #${test.index}: ${test.task}\n`;
+                    md += `- **Category:** ${test.category}\n`;
+                    md += `- **Expected:** ${test.expected}\n`;
+                    md += `- **Duration:** ${test.duration}s\n`;
+                    md += `- **Error:** ${test.message}\n\n`;
+                });
+            }
+
+            return md;
+        }
+
+        function generateHtmlReport(data) {
+            const { metadata, summary, tests } = data;
+
+            let html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agent Test Report</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; padding: 40px; background: #f5f5f7; color: #1d1d1f; }
+        .container { max-width: 1000px; margin: 0 auto; background: white; border-radius: 12px; padding: 40px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
+        h1 { font-size: 32px; margin-bottom: 8px; }
+        .meta { color: #86868b; font-size: 14px; margin-bottom: 30px; }
+        .summary { background: linear-gradient(135deg, rgba(0, 122, 255, 0.05) 0%, rgba(0, 122, 255, 0.02) 100%); border: 1px solid rgba(0, 122, 255, 0.15); border-radius: 8px; padding: 20px; margin-bottom: 30px; }
+        .summary h2 { font-size: 18px; margin-bottom: 15px; }
+        .stats { display: flex; gap: 30px; flex-wrap: wrap; }
+        .stat { display: flex; flex-direction: column; }
+        .stat-label { font-size: 12px; color: #86868b; margin-bottom: 4px; }
+        .stat-value { font-size: 24px; font-weight: 600; }
+        .stat-value.passed { color: #34C759; }
+        .stat-value.failed { color: #FF3B30; }
+        .category { margin-bottom: 30px; }
+        .category h3 { font-size: 16px; margin-bottom: 15px; padding-bottom: 8px; border-bottom: 1px solid #d2d2d7; }
+        .test-item { padding: 12px; margin-bottom: 8px; border-radius: 8px; border: 1px solid #d2d2d7; display: flex; justify-content: space-between; align-items: center; }
+        .test-item.passed { background: rgba(52, 199, 89, 0.05); border-color: rgba(52, 199, 89, 0.2); }
+        .test-item.failed { background: rgba(255, 59, 48, 0.05); border-color: rgba(255, 59, 48, 0.2); }
+        .test-name { flex: 1; }
+        .test-duration { color: #86868b; font-size: 13px; margin-left: 10px; }
+        .error-msg { color: #FF3B30; font-size: 12px; margin-top: 4px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📊 Agent Test Report</h1>
+        <div class="meta">
+            Generated: ${new Date(metadata.generatedAt).toLocaleString()}<br>
+            Session Started: ${metadata.sessionStartTime ? new Date(metadata.sessionStartTime).toLocaleString() : 'N/A'}<br>
+            Duration: ${metadata.duration}
+        </div>
+
+        <div class="summary">
+            <h2>Summary</h2>
+            <div class="stats">
+                <div class="stat">
+                    <div class="stat-label">Total Tests</div>
+                    <div class="stat-value">${summary.total}</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-label">Passed</div>
+                    <div class="stat-value passed">${summary.passed}</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-label">Failed</div>
+                    <div class="stat-value failed">${summary.failed}</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-label">Not Run</div>
+                    <div class="stat-value">${summary.notRun}</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-label">Pass Rate</div>
+                    <div class="stat-value">${summary.passRate}</div>
+                </div>
+            </div>
+        </div>\n`;
+
+            // Group by category
+            const categories = {};
+            tests.forEach(test => {
+                if (!categories[test.category]) {
+                    categories[test.category] = [];
+                }
+                categories[test.category].push(test);
+            });
+
+            Object.entries(categories).forEach(([category, categoryTests]) => {
+                const catPassed = categoryTests.filter(t => t.status === 'Passed').length;
+                const catTotal = categoryTests.filter(t => t.status !== 'Not Run').length;
+
+                html += `<div class="category">
+            <h3>${category.toUpperCase()} (${catPassed}/${catTotal} passed)</h3>\n`;
+
+                categoryTests.forEach(test => {
+                    const statusClass = test.status === 'Passed' ? 'passed' : test.status === 'Failed' ? 'failed' : '';
+                    const icon = test.status === 'Passed' ? '✅' : test.status === 'Failed' ? '❌' : '⊙';
+
+                    html += `<div class="test-item ${statusClass}">
+                <div class="test-name">
+                    ${icon} ${test.task}`;
+
+                    if (test.message) {
+                        html += `<div class="error-msg">Error: ${test.message}</div>`;
+                    }
+
+                    html += `</div>`;
+
+                    if (test.duration) {
+                        html += `<div class="test-duration">${test.duration}s</div>`;
+                    }
+
+                    html += `</div>\n`;
+                });
+
+                html += `</div>\n`;
+            });
+
+            html += `</div>
+</body>
+</html>`;
+
+            return html;
+        }
+
+        async function runCustomTask() {
+            console.log('🔵 Run button clicked!');
+            const input = document.getElementById('taskInput');
+            const runBtn = document.getElementById('runBtn');
+            const task = input.value.trim();
+
+            console.log('Task input value:', task);
+
+            if (!task) {
+                // Pulse the input to draw attention
+                input.classList.add('pulse');
+                setTimeout(() => input.classList.remove('pulse'), 600);
+                input.focus();
+                log('warning', '⚠️ Please enter a task to get started');
+                return;
+            }
+
+            // Disable run button while running
+            runBtn.disabled = true;
+            runBtn.textContent = '⏳ Running...';
+
+            // Immediate visual feedback - show banner FIRST
+            const banner = document.getElementById('statusBanner');
+            banner.classList.add('active');
+            document.getElementById('bannerText').textContent = `⚡ Starting: ${task.substring(0, 50)}...`;
+
+            // Scroll output into view
+            document.getElementById('output').scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+            console.log('🚀 Executing task:', task);
+
+            try {
+                await executeTask(task, 'Custom', 'User-defined');
+                input.value = '';
+            } finally {
+                // Re-enable run button
+                runBtn.disabled = false;
+                runBtn.textContent = 'Run';
+            }
+        }
+
+        async function executeTask(task, category, expected) {
+            const startTime = Date.now();
+
+            // Store current task for refinement
+            currentTask = task;
+
+            // Auto-clear output from previous test (silent mode - keeps stats)
+            clearOutput(true);
+
+            // Show prominent status banner
+            const banner = document.getElementById('statusBanner');
+            const bannerText = document.getElementById('bannerText');
+            banner.classList.add('active');
+            bannerText.textContent = `⚡ AGENT RUNNING ⚡ ${task}`;
+
+            setStatus('loading', `Running: ${category}`);
+
+            log('info', `\n${'='.repeat(60)}`);
+            log('info', `📋 Category: ${category}`);
+            log('info', `📝 Task: "${task}"`);
+            log('info', `🎯 Expected: ${expected}`);
+            log('info', `⏱️ Started at ${new Date().toLocaleTimeString()}`);
+
+
+            log('info', `🚀 System is running...`);
+            log('info', `⏳ Waiting for AI response (this may take 10-30 seconds)...`);
+
+            // Start progress indicator
+            let progressDots = 0;
+            const progressInterval = setInterval(() => {
+                progressDots = (progressDots + 1) % 4;
+                const dots = '.'.repeat(progressDots);
+                const elapsed = Math.floor((Date.now() - startTime) / 1000);
+                bannerText.textContent = `⚡ Processing${dots} (${elapsed}s elapsed)`;
+            }, 500);
+
+            // Create abort controller and store globally
+            currentAbortController = new AbortController();
+            let timeoutId = null;
+
+            try {
+                // Add timeout to fetch request (10 minutes for Ollama - it can be slow!)
+                timeoutId = setTimeout(() => {
+                    currentAbortController.abort();
+                    log('warning', '⏱️ Request timed out after 10 minutes');
+                }, 600000); // 10 minutes = 600,000 ms
+
+                const response = await fetch(`${API_BASE}/api/agent/execute`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ task }),
+                    signal: currentAbortController.signal
+                });
+
+                clearTimeout(timeoutId);
+                const duration = Date.now() - startTime;
+
+                if (!response.ok) {
+                    // Try to parse error response for user-friendly message
+                    try {
+                        const errorData = await response.json();
+                        const errorMessage = errorData.error?.message || errorData.error || response.statusText;
+                        throw new Error(errorMessage);
+                    } catch (parseError) {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
+                }
+
+                const result = await response.json();
+
+                // Debug logging
+                console.log('=== AGENT RESPONSE DEBUG ===');
+                console.log('Full result:', result);
+                console.log('Completed steps:', result.completedSteps);
+                console.log('First step details:', result.completedSteps?.[0]);
+                console.log('First step result:', result.completedSteps?.[0]?.result);
+                console.log('First step parameters:', result.completedSteps?.[0]?.parameters);
+                console.log('Tools used:', result.completedSteps?.map(s => s.tool));
+                console.log('Artifacts present?', !!result.artifacts);
+                console.log('Artifacts array:', result.artifacts);
+                console.log('Artifacts length:', result.artifacts?.length);
+                console.log('===========================');
+
+                // Clear progress indicator
+                clearInterval(progressInterval);
+
+                const durationSec = (duration / 1000).toFixed(2);
+
+                if (result.success) {
+                    log('success', `✅ SUCCESS (${durationSec}s)`);
+                    log('success', `   Steps: ${result.completedSteps?.length || 0}/${result.plan?.steps?.length || 0}`);
+                    if (result.output) {
+                        log('info', `   Output: ${JSON.stringify(result.output, null, 2)}`);
+                    }
+                    stats.passed++;
+                } else {
+                    log('error', `❌ FAILED (${durationSec}s)`);
+                    log('error', `   Error: ${result.error || 'Unknown'}`);
+                    if (result.failedSteps?.length > 0) {
+                        result.failedSteps.forEach(step => {
+                            log('error', `   - ${step.description}: ${step.error}`);
+                        });
+                    }
+                    stats.failed++;
+                }
+
+                stats.total++;
+                updateStats();
+                log('info', `🛑 System stopped`);
+
+                // Display technologies used
+                if (result.metadata?.technologies) {
+                    displayTechnologies(result.metadata.technologies);
+                }
+
+                // Hide status banner
+                const banner = document.getElementById('statusBanner');
+                banner.classList.remove('active');
+
+                setStatus('ready', 'Ready');
+
+                // Display artifacts if any
+                console.log('Result:', result);
+                console.log('Artifacts:', result.artifacts);
+                if (result.artifacts && result.artifacts.length > 0) {
+                    log('info', `📦 Found ${result.artifacts.length} artifact(s)`);
+                    displayArtifacts(result.artifacts);
+                } else {
+                    log('warning', '⚠️ No artifacts returned (no files were created)');
+                }
+
+            } catch (error) {
+                // Clear progress indicator and timeout
+                clearInterval(progressInterval);
+                if (timeoutId) clearTimeout(timeoutId);
+
+                const duration = Date.now() - startTime;
+                const durationSec = (duration / 1000).toFixed(2);
+
+                // Check if it's an abort error (timeout or user-initiated)
+                if (error.name === 'AbortError') {
+                    // Check if it was user-initiated
+                    if (currentAbortController && currentAbortController.signal.aborted) {
+                        log('warning', `🛑 STOPPED BY USER (${durationSec}s)`);
+                        log('info', `   Task was cancelled`);
+                    } else {
+                        log('error', `⏱️ TIMEOUT (${durationSec}s)`);
+                        log('error', `   Request took longer than 3 minutes`);
+                        log('error', `   The AI provider (Ollama) may be slow or unresponsive`);
+                        log('error', `   Try a simpler task or check if Ollama is running`);
+                    }
+                } else {
+                    log('error', `💥 EXCEPTION (${durationSec}s)`);
+                    log('error', `   ${error.message}`);
+                }
+
+                stats.failed++;
+                stats.total++;
+                updateStats();
+                log('info', `🛑 System stopped`);
+
+                // Hide status banner
+                const banner = document.getElementById('statusBanner');
+                banner.classList.remove('active');
+
+                setStatus('ready', 'Ready');
+            } finally {
+                // Clean up abort controller
+                currentAbortController = null;
+            }
+        }
+
+        function abortTask() {
+            if (currentAbortController) {
+                log('warning', '⏹ Stopping task...');
+                currentAbortController.abort();
+
+                // Update UI immediately
+                const banner = document.getElementById('statusBanner');
+                const bannerText = document.getElementById('bannerText');
+                bannerText.textContent = '⏹ Stopping...';
+
+                // Re-enable run button
+                const runBtn = document.getElementById('runBtn');
+                if (runBtn) {
+                    runBtn.disabled = false;
+                    runBtn.textContent = 'Run';
+                }
+            }
+        }
+
+        function log(type, message) {
+            const output = document.getElementById('output');
+            const entry = document.createElement('div');
+            entry.className = `log-entry log-${type}`;
+            entry.textContent = message;
+            output.appendChild(entry);
+            output.scrollTop = output.scrollHeight;
+        }
+
+        function setStatus(state, text) {
+            // Status is now shown in the banner
+        }
+
+        function updateStats() {
+            document.getElementById('totalTests').textContent = stats.total;
+            document.getElementById('passedTests').textContent = stats.passed;
+            document.getElementById('failedTests').textContent = stats.failed;
+        }
+
+        function clearOutput(silent = false) {
+            document.getElementById('output').innerHTML = '';
+
+            // Only reset stats if manually cleared (not auto-clear)
+            if (!silent) {
+                stats = { total: 0, passed: 0, failed: 0 };
+                updateStats();
+                log('info', '🧹 Output cleared');
+            }
+
+            // Hide and clear artifacts section
+            document.getElementById('artifactsSection').style.display = 'none';
+            document.getElementById('fileList').innerHTML = '';
+            currentArtifacts = [];
+        }
+
+        // Technology Tracking Display
+        function displayTechnologies(technologiesData) {
+            const { used, available } = technologiesData;
+
+            if (!available || available.length === 0) {
+                return; // No technologies available
+            }
+
+            // Categorize technologies
+            const categories = categorizeTechnologies(used, available);
+
+            log('info', `\n${'─'.repeat(60)}`);
+            log('info', `🔧 TECHNOLOGIES USED`);
+            log('info', `${'─'.repeat(60)}`);
+
+            // Display Core Technologies (always used)
+            if (categories.core.used.length > 0) {
+                log('success', `\n⚙️  Core Technologies (${categories.core.used.length}):`);
+                categories.core.used.forEach(tech => {
+                    const displayName = formatTechnologyName(tech);
+                    log('success', `   • ${displayName}`);
+                });
+            }
+
+            // Display Active Enhancements (used this run)
+            if (categories.enhancement.used.length > 0) {
+                log('success', `\n✨ Active Enhancements (${categories.enhancement.used.length}):`);
+                categories.enhancement.used.forEach(tech => {
+                    const displayName = formatTechnologyName(tech);
+                    log('success', `   • ${displayName}`);
+                });
+            }
+
+            // Display Available Enhancements (not used this run)
+            if (categories.enhancement.available.length > 0) {
+                log('info', `\n💡 Available Enhancements (${categories.enhancement.available.length}):`);
+                categories.enhancement.available.forEach(tech => {
+                    const displayName = formatTechnologyName(tech);
+                    log('info', `   • ${displayName}`);
+                });
+            }
+
+            // Display Future Capabilities (not implemented yet)
+            if (categories.future.length > 0) {
+                log('info', `\n🔮 Future Capabilities (${categories.future.length}):`);
+                categories.future.forEach(tech => {
+                    const displayName = formatTechnologyName(tech);
+                    log('info', `   • ${displayName}`);
+                });
+            }
+
+            // Summary
+            const totalUsed = categories.core.used.length + categories.enhancement.used.length;
+            const totalAvailable = available.length;
+            log('info', `\n📊 Summary: ${totalUsed}/${totalAvailable} technologies active`);
+            log('info', `${'─'.repeat(60)}\n`);
+        }
+
+        function categorizeTechnologies(used, available) {
+            // Define technology categories
+            const coreTech = [
+                'AGENT_EXECUTOR',
+                'TASK_PLANNER',
+                'TOOL_REGISTRY',
+                'REASONING_ENGINE'
+            ];
+
+            const enhancementTech = [
+                'PERSONAL_CONTEXT_REPOSITORY',
+                'CONTEXT_INJECTOR',
+                'SELF_IMPROVEMENT_AGENT',
+                'CRITIQUE_GENERATOR',
+                'RESPONSE_REFINER',
+                'VERIFICATION_LOOP',
+                'QWEN_OPTIMIZATION',
+                'LETTA_MEMORY_SYSTEM',
+                'CONTEXT_COMPRESSION',
+                'FILE_OPERATIONS',
+                'CODE_EXECUTION',
+                'SHELL_SERVICE',
+                'PROJECT_SCANNER',
+                'DEPENDENCY_ANALYZER',
+                'DIFF_SERVICE'
+            ];
+
+            const futureTech = [
+                'MEMORY_SERVICE',
+                'EMBEDDING_SERVICE',
+                'RAG',
+                'VECTOR_STORE',
+                'HYBRID_EXECUTOR',
+                'STRATEGIC_PLANNER',
+                'LOCAL_EXECUTOR',
+                'ESCALATION_MANAGER',
+                'CHAT_PANEL',
+                'FILE_BROWSER',
+                'CODE_EDITOR',
+                'DIFF_VIEWER',
+                'GIT_SERVICE',
+                'WEBSOCKET_SERVICE',
+                'AUTH_SERVICE',
+                'ERROR_LOGGER',
+                'VERSION_MANAGER',
+                'DOCKER_SUPPORT',
+                'SOP_LOADER',
+                'SOP_VALIDATOR',
+                'SOP_EXECUTOR',
+                'WORKFLOW_SELECTOR',
+                'MONACO_EDITOR',
+                'PGVECTOR',
+                'VERCEL_AI_SDK',
+                'WEBCONTAINERS'
+            ];
+
+            return {
+                core: {
+                    used: used.filter(t => coreTech.includes(t)),
+                    available: available.filter(t => coreTech.includes(t) && !used.includes(t))
+                },
+                enhancement: {
+                    used: used.filter(t => enhancementTech.includes(t)),
+                    available: available.filter(t => enhancementTech.includes(t) && !used.includes(t))
+                },
+                future: available.filter(t => futureTech.includes(t))
+            };
+        }
+
+        function formatTechnologyName(tech) {
+            // Convert SCREAMING_SNAKE_CASE to Title Case
+            return tech
+                .split('_')
+                .map(word => word.charAt(0) + word.slice(1).toLowerCase())
+                .join(' ');
+        }
+
+        // Artifacts handling
+        let currentArtifacts = [];
+        let currentTask = '';
+
+        function displayArtifacts(artifacts) {
+            console.log('=== DISPLAY ARTIFACTS DEBUG ===');
+            console.log('Artifacts received:', artifacts);
+
+            currentArtifacts = artifacts;
+            const section = document.getElementById('artifactsSection');
+            const fileList = document.getElementById('fileList');
+
+            section.style.display = 'block';
+
+            // Create simplified file list
+            const html = artifacts.map((artifact, index) => createFileItem(artifact, index)).join('');
+            fileList.innerHTML = html;
+
+            console.log('=== END DISPLAY ARTIFACTS DEBUG ===');
+            log('success', `📦 ${artifacts.length} file(s) created`);
+        }
+
+        function isEntryPoint(artifact) {
+            const path = artifact.path || artifact.name || '';
+            return path.endsWith('.html') || path.endsWith('.htm');
+        }
+
+        function isPreviewable(artifact) {
+            return isEntryPoint(artifact) || (artifact.path || artifact.name || '').endsWith('.svg');
+        }
+
+        function getFileIcon(artifact) {
+            const path = artifact.path || artifact.name || '';
+            if (path.endsWith('.html') || path.endsWith('.htm')) return '🌐';
+            if (path.endsWith('.js')) return '⚡';
+            if (path.endsWith('.css')) return '🎨';
+            if (path.endsWith('.json')) return '📋';
+            if (path.endsWith('.svg')) return '🖼️';
+            return '📄';
+        }
+
+        function createFileItem(artifact, index) {
+            const icon = getFileIcon(artifact);
+            const fileName = artifact.path || artifact.name || 'Unnamed file';
+            const isHTML = isEntryPoint(artifact);
+
+            return `
+                <li class="file-item">
+                    <div class="file-info">
+                        <span class="file-icon">${icon}</span>
+                        <span class="file-name">${fileName}</span>
+                    </div>
+                    ${isHTML ? `<button class="file-preview-btn" onclick="window.previewArtifact(${index})">Preview</button>` : ''}
+                </li>
+            `;
+        }
+
+
+
+        function previewArtifact(index) {
+            console.log('=== PREVIEW ARTIFACT DEBUG ===');
+            console.log('Index:', index);
+            console.log('Current artifacts:', currentArtifacts);
+
+            const artifact = currentArtifacts[index];
+            console.log('Selected artifact:', artifact);
+            console.log('Artifact content:', artifact?.content);
+            console.log('Content length:', artifact?.content?.length);
+
+            if (isPreviewable(artifact)) {
+                console.log('Artifact is previewable, opening in browser...');
+
+                // Create a blob URL from the artifact content
+                const blob = new Blob([artifact.content || ''], { type: 'text/html' });
+                const url = URL.createObjectURL(blob);
+
+                // Open in new browser tab
+                const newWindow = window.open(url, '_blank');
+
+                if (newWindow) {
+                    log('success', `👁️ Opened in browser: ${artifact.path || artifact.name}`);
+
+                    // Clean up the blob URL after a delay
+                    setTimeout(() => {
+                        URL.revokeObjectURL(url);
+                    }, 1000);
+                } else {
+                    log('error', '❌ Popup blocked! Please allow popups for this site.');
+                }
+            } else {
+                console.log('Artifact is NOT previewable');
+                log('warning', '⚠️ This file type cannot be previewed');
+            }
+
+            console.log('=== END PREVIEW ARTIFACT DEBUG ===');
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Workflow Functions - Removed (not needed for developer testing)
+
+        // Help Modal Functions
+        async function showHelpModal() {
+            const modal = document.getElementById('helpModal');
+            const modalBody = document.getElementById('helpModalBody');
+
+            // Load help content
+            try {
+                const response = await fetch('/custom-test-help.md');
+                const markdown = await response.text();
+
+                // Convert markdown to HTML (simple conversion)
+                const html = convertMarkdownToHTML(markdown);
+                modalBody.innerHTML = html;
+
+                modal.classList.add('active');
+            } catch (error) {
+                modalBody.innerHTML = '<p>Error loading help content. Please try again.</p>';
+                modal.classList.add('active');
+            }
+        }
+
+        function hideHelpModal() {
+            const modal = document.getElementById('helpModal');
+            modal.classList.remove('active');
+        }
+
+        function convertMarkdownToHTML(markdown) {
+            let html = markdown;
+
+            // Headers
+            html = html.replace(/^### (.*$)/gim, '<h3>$1</h3>');
+            html = html.replace(/^## (.*$)/gim, '<h2>$1</h2>');
+            html = html.replace(/^# (.*$)/gim, '<h1>$1</h1>');
+
+            // Bold
+            html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+
+            // Code blocks
+            html = html.replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>');
+
+            // Inline code
+            html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
+
+            // Links
+            html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank">$1</a>');
+
+            // Horizontal rules
+            html = html.replace(/^---$/gim, '<hr>');
+
+            // Lists
+            html = html.replace(/^\* (.*$)/gim, '<li>$1</li>');
+            html = html.replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>');
+
+            // Checkmarks and X marks
+            html = html.replace(/✅/g, '<span style="color: var(--success);">✅</span>');
+            html = html.replace(/❌/g, '<span style="color: var(--error);">❌</span>');
+
+            // Tables (basic support)
+            const lines = html.split('\n');
+            let inTable = false;
+            let tableHTML = '';
+            let processedLines = [];
+
+            for (let i = 0; i < lines.length; i++) {
+                const line = lines[i];
+
+                if (line.trim().startsWith('|')) {
+                    if (!inTable) {
+                        inTable = true;
+                        tableHTML = '<table>';
+                    }
+
+                    const cells = line.split('|').filter(cell => cell.trim());
+
+                    // Skip separator lines
+                    if (cells[0].trim().startsWith('---')) {
+                        continue;
+                    }
+
+                    // Determine if header row (first table row)
+                    const isHeader = !tableHTML.includes('<tr>');
+                    const tag = isHeader ? 'th' : 'td';
+
+                    tableHTML += '<tr>';
+                    cells.forEach(cell => {
+                        tableHTML += `<${tag}>${cell.trim()}</${tag}>`;
+                    });
+                    tableHTML += '</tr>';
+                } else {
+                    if (inTable) {
+                        tableHTML += '</table>';
+                        processedLines.push(tableHTML);
+                        tableHTML = '';
+                        inTable = false;
+                    }
+                    processedLines.push(line);
+                }
+            }
+
+            if (inTable) {
+                tableHTML += '</table>';
+                processedLines.push(tableHTML);
+            }
+
+            html = processedLines.join('\n');
+
+            // Paragraphs
+            html = html.replace(/\n\n/g, '</p><p>');
+            html = '<p>' + html + '</p>';
+
+            // Clean up empty paragraphs
+            html = html.replace(/<p>\s*<\/p>/g, '');
+            html = html.replace(/<p>\s*<h/g, '<h');
+            html = html.replace(/<\/h[1-6]>\s*<\/p>/g, (match) => match.replace('</p>', ''));
+
+            return html;
+        }
+
+        // Close modal on overlay click
+        document.addEventListener('click', (e) => {
+            if (e.target.id === 'helpModal') {
+                hideHelpModal();
+            }
+        });
+
+        // Initialize on load
+        window.addEventListener('DOMContentLoaded', () => {
+            init();
+        });
+    </script>
+
+    <!-- Help Modal -->
+    <div id="helpModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Custom File Operation Test - Help</h2>
+                <button class="modal-close" onclick="hideHelpModal()">×</button>
+            </div>
+            <div class="modal-body" id="helpModalBody">
+                Loading...
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+

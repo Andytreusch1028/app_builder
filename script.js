@@ -1,0 +1,1 @@
+// No script needed for this simple example

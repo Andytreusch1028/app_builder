@@ -1,0 +1,1507 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>Application Builder Dashboard</title>
+
+    <!-- Monaco Editor -->
+    <link rel="stylesheet" data-name="vs/editor/editor.main" href="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.45.0/min/vs/editor/editor.main.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.45.0/min/vs/loader.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --primary: #007AFF;
+            --secondary: #5856D6;
+            --success: #34C759;
+            --warning: #FF9500;
+            --error: #FF3B30;
+            --bg-neutral-50: #F5F5F7;
+            --surface: #FFFFFF;
+            --text-primary: #1D1D1F;
+            --text-secondary: #86868B;
+            --border: rgba(0, 0, 0, 0.06);
+            --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.04);
+            --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.08);
+            --radius: 10px;
+        }
+
+        body { font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--surface); color: var(--text-primary); line-height: 1.5; overflow: hidden; }
+
+        /* Header */
+        .header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 16px 24px; box-shadow: var(--shadow-sm); display: flex; justify-content: space-between; align-items: center; }
+        .header-title { font-size: 24px; font-weight: 600; letter-spacing: -0.5px; }
+        .header-subtitle { font-size: 14px; color: var(--text-secondary); margin-top: 4px; }
+        .header-actions { display: flex; gap: 12px; }
+
+        /* Buttons and Inputs */
+        .btn { padding: 10px 20px; border: none; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+        .btn-primary { background: var(--primary); color: #fff; }
+        .btn-secondary { background: var(--bg-neutral-50); color: var(--text-primary); }
+        .btn-success { background: var(--success); color: #fff; }
+        .btn-inline { padding: 6px 12px; font-size: 12px; }
+        .btn:hover { filter: brightness(0.97); }
+        .btn-block { width: 100%; }
+
+        .input { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; background: var(--surface); color: var(--text-primary); }
+        .input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.1); }
+        textarea.input { resize: vertical; }
+
+        .muted-small { font-size: 12px; color: var(--text-secondary); }
+        .hidden { display: none !important; }
+
+        /* Modal */
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; }
+        .modal.active { display: flex; }
+        .modal-content { background: var(--surface); border-radius: 12px; padding: 32px; max-width: 900px; width: 90%; max-height: 80vh; overflow-y: auto; box-shadow: var(--shadow-md); }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+        .modal-title { font-size: 20px; font-weight: 600; }
+        .modal-close { background: none; border: none; font-size: 24px; color: var(--text-secondary); cursor: pointer; width: 32px; height: 32px; display: grid; place-items: center; border-radius: 6px; }
+
+        /* Page Layout (3 columns) */
+        .page { display: grid; grid-template-columns: 240px 1fr 400px; height: calc(100vh - 80px); background: var(--bg-neutral-50); position: relative; }
+
+        /* Resize Handles */
+        .resize-handle { position: absolute; top: 0; bottom: 0; width: 8px; cursor: col-resize; z-index: 10; background: var(--border); transition: background 0.2s; }
+        .resize-handle:hover, .resize-handle.dragging { background: var(--primary); }
+        .resize-handle-left { left: 240px; margin-left: -4px; }
+        .resize-handle-right { right: 400px; margin-right: -4px; }
+
+        /* Chat Panel Styles */
+        .chat-panel { display: flex; flex-direction: column; height: 100%; background: var(--surface); }
+        .chat-messages { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+        .chat-message { padding: 12px; border-radius: 8px; font-size: 13px; line-height: 1.5; }
+        .chat-message.system { background: var(--bg-neutral-50); color: var(--text-primary); border-left: 3px solid var(--primary); }
+        .chat-message.user { background: var(--primary); color: white; align-self: flex-end; max-width: 80%; }
+        .chat-message.error { background: #FFF5F5; color: var(--error); border-left: 3px solid var(--error); }
+        .chat-timestamp { font-size: 11px; opacity: 0.7; margin-top: 4px; }
+
+        /* Sidebar */
+        .sidebar { background: var(--surface); border-right: 1px solid var(--border); padding: 16px; overflow-y: auto; }
+        .section { padding: 12px 0; border-bottom: 1px solid var(--border); }
+        .section:last-child { border-bottom: 0; }
+        .section-header { display: flex; align-items: center; justify-content: space-between; cursor: pointer; user-select: none; }
+        .section-title { font-size: 12px; letter-spacing: 0.6px; font-weight: 700; color: var(--text-primary); text-transform: uppercase; }
+        .section-body { margin-top: 12px; overflow: hidden; transition: max-height 0.3s ease, opacity 0.3s ease; }
+        .section-body.collapsed { max-height: 0 !important; opacity: 0; margin-top: 0; }
+        .accordion-toggle { font-size: 12px; transition: transform 0.3s ease; color: var(--text-secondary); }
+        .accordion-toggle.collapsed { transform: rotate(-90deg); }
+
+        .file-tree { font-size: 13px; line-height: 1.6; }
+        .file-tree-item { padding: 4px 8px; cursor: pointer; border-radius: 4px; display: flex; align-items: center; gap: 6px; }
+        .file-tree-item:hover { background: var(--bg-neutral-50); }
+        .file-tree-item.active { background: var(--primary); color: #fff; }
+        .file-tree-folder { font-weight: 500; }
+        .file-tree-children { margin-left: 16px; }
+        .file-icon { font-size: 14px; }
+        .folder-toggle { cursor: pointer; user-select: none; width: 16px; text-align: center; }
+
+        /* Quality Insights */
+        .insight-card { background: var(--bg-neutral-50); padding: 8px; border-radius: 6px; border: 1px solid var(--border); }
+        .insight-label { font-size: 11px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+        .insight-value { font-size: 14px; font-weight: 600; color: var(--text-primary); }
+        .quality-bar { width: 100%; height: 6px; background: var(--border); border-radius: 3px; margin-top: 6px; overflow: hidden; }
+        .quality-bar-fill { height: 100%; background: linear-gradient(90deg, var(--error) 0%, var(--warning) 50%, var(--success) 100%); transition: width 0.3s ease; }
+        .tech-badge { display: inline-block; padding: 2px 8px; background: var(--primary); color: white; border-radius: 12px; font-size: 10px; font-weight: 600; }
+
+        /* Composer */
+        .composer-wrap { display: flex; flex-direction: column; padding: 24px; overflow: auto; }
+        .composer-card { width: 100%; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; box-shadow: var(--shadow-sm); display: grid; gap: 12px; }
+        .row { display: flex; align-items: center; gap: 8px; }
+        .segmented { display: inline-flex; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+        .segmented .btn { border-radius: 0; }
+
+        /* Workspace */
+        .workspace { background: var(--surface); border-left: 1px solid var(--border); display: flex; flex-direction: column; }
+        .tabs { display: flex; border-bottom: 1px solid var(--border); gap: 8px; padding: 8px; }
+        .tab { padding: 8px 12px; font-size: 13px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); cursor: pointer; }
+        .tab.active { background: var(--bg-neutral-50); border-color: var(--primary); color: var(--primary); }
+        .panels { position: relative; flex: 1; }
+        .panel-screen { position: absolute; inset: 0; display: none; overflow: hidden; }
+        .panel-screen.active { display: block; }
+        .panel { background: var(--surface); padding: 16px; height: 100%; display: flex; flex-direction: column; gap: 12px; }
+        .panel-header { display: flex; justify-content: space-between; align-items: center; }
+        .panel-title { font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+        .panel-body { flex: 1; border-radius: 8px; overflow: hidden; background: var(--bg-neutral-50); }
+        .panel-body-inner { width: 100%; height: 100%; border: none; background: #fff; }
+        .panel-placeholder { display: grid; place-items: center; height: 100%; color: var(--text-secondary); font-size: 13px; background: var(--bg-neutral-50); }
+        .log-body { flex: 1; overflow-y: auto; font-family: 'SF Mono', 'Consolas', monospace; font-size: 12px; border: 1px solid var(--border); border-radius: 8px; padding: 8px; background: var(--surface); }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="header">
+        <div>
+            <h1 class="header-title">🏗️ Application Builder</h1>
+            <p class="header-subtitle">Build applications through natural language conversation</p>
+        </div>
+        <div class="header-actions">
+            <button class="btn btn-secondary" onclick="openTechnologySettings()">🔧 Technologies</button>
+            <button class="btn btn-secondary" onclick="openAgentSettings()" id="agent_settings" title="Agent Settings">⚙️ Agent Settings</button>
+        </div>
+    </div>
+
+    <!-- Agent Settings Modal (preserved) -->
+    <div id="agent-settings-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">🤖 Agent Configuration</div>
+                <button class="modal-close" onclick="closeAgentSettings()">×</button>
+            </div>
+
+            <div>
+                <label style="display:block; font-size:14px; font-weight:500; margin-bottom:8px;">Agent Personality & Behavior</label>
+                <p class="muted-small" style="margin-bottom:12px;">Describe how you want the AI assistant to behave. Be specific about tone, expertise level, and interaction style.</p>
+                <textarea id="agent-persona" class="input" rows="12" placeholder="Example: Act as a senior full-stack developer who is patient and explains concepts clearly..."></textarea>
+            </div>
+
+            <div style="background: var(--bg-neutral-50); padding: 16px; border-radius: 8px; margin: 16px 0;">
+                <div style="font-size:13px; font-weight:500; margin-bottom:8px;">💡 Default Persona (Friendly Junior Coder)</div>
+                <div class="muted-small" style="line-height:1.6;">A proactive junior developer who asks questions, offers suggestions, and thinks ahead about user needs. Focuses on best practices, debugging help, and encouragement.</div>
+            </div>
+
+            <div class="row">
+                <button class="btn btn-primary" onclick="saveAgentSettings()" style="flex:1">💾 Save Settings</button>
+                <button class="btn btn-secondary" onclick="resetAgentSettings()">🔄 Reset to Default</button>
+                <button class="btn btn-secondary" onclick="closeAgentSettings()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Technology Settings Modal (preserved) -->
+    <div id="technology-settings-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">🔧 Technology Status & Management</div>
+                <button class="modal-close" onclick="closeTechnologySettings()">×</button>
+            </div>
+
+            <div>
+                <p class="muted-small" style="margin-bottom:16px;">Monitor and manage the helper technologies that power the Application Builder.</p>
+                <div id="technology-list" style="display:flex; flex-direction:column; gap:16px;">
+                    <p class="muted-small">Loading technologies...</p>
+                </div>
+            </div>
+
+            <div class="row" style="justify-content:flex-end;">
+                <button class="btn btn-secondary" onclick="refreshTechnologies()">🔄 Refresh Status</button>
+                <button class="btn btn-secondary" onclick="closeTechnologySettings()">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Page Layout: 3 Columns -->
+    <div class="page" id="page">
+        <!-- Resize Handles -->
+        <div class="resize-handle resize-handle-left" id="resize-left"></div>
+        <div class="resize-handle resize-handle-right" id="resize-right"></div>
+
+        <!-- Sidebar (Left) -->
+        <aside class="sidebar" id="sidebar">
+            <!-- PROJECTS section -->
+            <section class="section" id="projects">
+                <div class="section-header" onclick="toggleAccordion('project-accordion')">
+                    <div class="section-title">PROJECTS</div>
+                    <span class="accordion-toggle">▼</span>
+                </div>
+                <div id="project-accordion" class="section-body">
+                    <button class="btn btn-primary btn-block" id="new_project" onclick="newProject()">+ New Project</button>
+                    <div id="project-list" class="muted-small" style="max-height:200px; overflow-y:auto; margin-top:12px;">
+                        <p>Loading projects...</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- FILES section -->
+            <section class="section" id="files">
+                <div class="section-header" onclick="toggleAccordion('files-accordion')">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <div class="section-title">FILES</div>
+                        <button class="btn btn-secondary btn-inline" onclick="event.stopPropagation(); updateFileTree();">🔄</button>
+                    </div>
+                    <span class="accordion-toggle">▼</span>
+                </div>
+                <div id="files-accordion" class="section-body">
+                    <div id="file-tree" class="file-tree">
+                        <p class="muted-small">No project open</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- QUALITY INSIGHTS section -->
+            <section class="section" id="quality">
+                <div class="section-header" onclick="toggleAccordion('quality-accordion')">
+                    <div class="section-title">QUALITY INSIGHTS</div>
+                    <span class="accordion-toggle">▼</span>
+                </div>
+                <div id="quality-accordion" class="section-body">
+                    <div id="quality-insights" class="muted-small" style="display: flex; flex-direction: column; gap: 12px;">
+                        <!-- Build Status -->
+                        <div class="insight-card">
+                            <div class="insight-label">Build Status</div>
+                            <div id="insight-status" class="insight-value">Ready</div>
+                        </div>
+
+                        <!-- Build Time -->
+                        <div class="insight-card">
+                            <div class="insight-label">⏱️ Build Time</div>
+                            <div id="insight-build-time" class="insight-value">—</div>
+                        </div>
+
+                        <!-- Quality Score -->
+                        <div class="insight-card">
+                            <div class="insight-label">⭐ Quality Score</div>
+                            <div id="insight-quality-score" class="insight-value">—</div>
+                            <div id="insight-quality-bar" class="quality-bar">
+                                <div id="insight-quality-fill" class="quality-bar-fill" style="width: 0%"></div>
+                            </div>
+                        </div>
+
+                        <!-- File Stats -->
+                        <div class="insight-card">
+                            <div class="insight-label">📁 Files Generated</div>
+                            <div id="insight-file-count" class="insight-value">—</div>
+                        </div>
+
+                        <div class="insight-card">
+                            <div class="insight-label">📦 Total Size</div>
+                            <div id="insight-total-size" class="insight-value">—</div>
+                        </div>
+
+                        <!-- Technologies Detected -->
+                        <div class="insight-card">
+                            <div class="insight-label">🔧 Technologies</div>
+                            <div id="insight-technologies" class="insight-value" style="display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px;">
+                                <span class="tech-badge">None detected</span>
+                            </div>
+                        </div>
+
+                        <!-- Iterations (Self-Improvement) -->
+                        <div class="insight-card">
+                            <div class="insight-label">🔄 Iterations</div>
+                            <div id="insight-iterations" class="insight-value">—</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- PROVIDER METRICS section -->
+            <section class="section" id="provider-metrics">
+                <div class="section-header" onclick="toggleAccordion('metrics-accordion')">
+                    <div class="section-title">PROVIDER METRICS</div>
+                    <span class="accordion-toggle">▼</span>
+                </div>
+                <div id="metrics-accordion" class="section-body">
+                    <div id="provider-metrics-content" class="muted-small" style="display: flex; flex-direction: column; gap: 12px;">
+                        <!-- Provider Status -->
+                        <div class="insight-card">
+                            <div class="insight-label">Status</div>
+                            <div id="metrics-status" class="insight-value">Loading...</div>
+                        </div>
+
+                        <!-- Total Generations -->
+                        <div class="insight-card">
+                            <div class="insight-label">📊 Total Generations</div>
+                            <div id="metrics-total" class="insight-value">—</div>
+                        </div>
+
+                        <!-- Average Response Time -->
+                        <div class="insight-card">
+                            <div class="insight-label">⚡ Avg Response Time</div>
+                            <div id="metrics-response-time" class="insight-value">—</div>
+                        </div>
+
+                        <!-- Quality Score -->
+                        <div class="insight-card">
+                            <div class="insight-label">⭐ Avg Quality Score</div>
+                            <div id="metrics-quality" class="insight-value">—</div>
+                            <div class="quality-bar">
+                                <div id="metrics-quality-fill" class="quality-bar-fill" style="width: 0%"></div>
+                            </div>
+                        </div>
+
+                        <!-- Escalations -->
+                        <div class="insight-card">
+                            <div class="insight-label">🚀 Escalations</div>
+                            <div id="metrics-escalations" class="insight-value">—</div>
+                        </div>
+
+                        <!-- Provider Usage -->
+                        <div class="insight-card">
+                            <div class="insight-label">🔧 Provider Usage</div>
+                            <div id="metrics-providers" class="insight-value" style="font-size: 11px; line-height: 1.6;">
+                                —
+                            </div>
+                        </div>
+
+                        <!-- Refresh Button -->
+                        <button class="btn btn-secondary btn-block btn-inline" onclick="refreshProviderMetrics()">
+                            🔄 Refresh Metrics
+                        </button>
+                    </div>
+                </div>
+            </section>
+        </aside>
+
+        <!-- Composer (Center) - Split View: Chat + Build Log -->
+        <main class="composer-wrap" id="composer" style="padding: 0; display: flex; flex-direction: column;">
+            <!-- Input Area (Top) -->
+            <div style="background: var(--surface); border-bottom: 1px solid var(--border); padding: 16px;">
+                <textarea id="prompt_composer" class="input" placeholder="Describe what you want to build..." style="height:100px; font-size:14px; margin-bottom: 12px;"></textarea>
+                <div class="row" style="gap: 12px;">
+                    <button id="build_app" class="btn btn-primary" onclick="sendBuildRequest()" style="flex: 1;">Build App</button>
+                    <div id="app_mode" class="segmented" title="Agent behavior mode">
+                        <button type="button" id="app_mode_build" class="btn" onclick="setAppMode('Build')">Build</button>
+                        <button type="button" id="app_mode_ask" class="btn" onclick="setAppMode('Ask')">Ask</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Split View: Chat (Top) + Build Log (Bottom) -->
+            <div style="flex: 1; display: flex; flex-direction: column; overflow: hidden;">
+                <!-- Chat Panel -->
+                <div style="flex: 1; border-bottom: 1px solid var(--border); display: flex; flex-direction: column; background: var(--surface);">
+                    <div style="padding: 12px 16px; border-bottom: 1px solid var(--border); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-primary);">
+                        💬 Chat
+                    </div>
+                    <div id="chat-messages" class="chat-messages">
+                        <div class="chat-message system">
+                            <div>👋 Welcome to the Application Builder!</div>
+                            <div class="chat-timestamp">Ready to build</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Build Log Panel -->
+                <div style="flex: 1; display: flex; flex-direction: column; background: var(--surface);">
+                    <div style="padding: 12px 16px; border-bottom: 1px solid var(--border); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-primary);">
+                        📋 Build Log
+                    </div>
+                    <div id="build-log" class="log-body" style="margin: 0; border: none; border-radius: 0;">
+                        <p style="color: var(--text-secondary);">Ready to build</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Legacy controls kept and hidden to preserve handlers -->
+            <div class="hidden">
+                <div id="build-input"></div>
+            </div>
+        </main>
+
+        <!-- Workspace (Right) -->
+        <section class="workspace" id="workspace">
+            <div class="tabs">
+                <button class="tab active" data-tab="preview" onclick="switchWorkspaceTab('preview')">Preview</button>
+                <button class="tab" data-tab="code" onclick="switchWorkspaceTab('code')">Code</button>
+                <button class="tab" data-tab="logs" onclick="switchWorkspaceTab('logs')">Logs</button>
+            </div>
+            <div class="panels">
+                <!-- Preview Panel -->
+                <div class="panel-screen active" id="tab-preview">
+                    <div class="panel" id="live_preview">
+                        <div class="panel-header">
+                            <div class="panel-title">Live Preview</div>
+                            <div class="row">
+                                <button class="btn btn-secondary btn-inline" onclick="refreshPreview()">🔄 Refresh</button>
+                                <button class="btn btn-secondary btn-inline" onclick="openPreviewInNewTab()">🔗 Open</button>
+                            </div>
+                        </div>
+                        <div class="panel-body">
+                            <iframe id="preview-iframe" class="panel-body-inner"></iframe>
+                            <div id="preview-placeholder" class="panel-placeholder">No preview available</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Code Panel -->
+                <div class="panel-screen" id="tab-code">
+                    <div class="panel" id="code_editor">
+                        <div class="panel-header">
+                            <div class="panel-title">Code Editor</div>
+                            <button class="btn btn-success btn-inline" onclick="saveCurrentFile()">💾 Save</button>
+                        </div>
+                        <div id="code-editor" class="panel-body">
+                            <div class="panel-placeholder" style="padding:12px;">No file selected</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Logs Panel -->
+                <div class="panel-screen" id="tab-logs">
+                    <div class="panel" id="agent_logs">
+                        <div class="panel-title">Build Log</div>
+                        <div id="build-log" class="log-body">
+                            <p class="muted-small">Ready to build</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        // JavaScript preserved exactly as provided previously (no changes to logic)
+        // State
+        let currentProject = null;
+        let currentBuildId = null;
+        let buildPollingInterval = null;
+        let monacoEditor = null;
+        let currentFilePath = null;
+        let ws = null; // WebSocket connection
+
+        // Column resize state
+        let isResizing = false;
+        let currentResizeHandle = null;
+        let leftColumnWidth = 240;
+        let rightColumnWidth = 400;
+
+        // Initialize Monaco Editor
+        require.config({ paths: { vs: 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.45.0/min/vs' } });
+
+        // Initialize WebSocket connection
+        function initializeWebSocket() {
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsUrl = `${protocol}//${window.location.host}/ws`;
+
+            console.log('🔌 Connecting to WebSocket:', wsUrl);
+            ws = new WebSocket(wsUrl);
+
+            ws.onopen = () => {
+                console.log('✅ WebSocket connected');
+                addBuildLog('🔌 Connected to build server');
+            };
+
+            ws.onmessage = (event) => {
+                try {
+                    const message = JSON.parse(event.data);
+                    handleWebSocketMessage(message);
+                } catch (error) {
+                    console.error('WebSocket message parse error:', error);
+                }
+            };
+
+            ws.onerror = (error) => {
+                console.error('❌ WebSocket error:', error);
+                addBuildLog('❌ WebSocket connection error');
+            };
+
+            ws.onclose = () => {
+                console.log('🔌 WebSocket disconnected');
+                addBuildLog('🔌 Disconnected from build server');
+
+                // Reconnect after 3 seconds
+                setTimeout(() => {
+                    console.log('🔄 Reconnecting WebSocket...');
+                    initializeWebSocket();
+                }, 3000);
+            };
+        }
+
+        // Column Resize Functionality
+        function initializeColumnResize() {
+            const page = document.getElementById('page');
+            const leftHandle = document.getElementById('resize-left');
+            const rightHandle = document.getElementById('resize-right');
+
+            // Left handle (sidebar resize)
+            leftHandle.addEventListener('mousedown', (e) => {
+                e.preventDefault();
+                isResizing = true;
+                currentResizeHandle = 'left';
+                leftHandle.classList.add('dragging');
+                document.body.style.cursor = 'col-resize';
+                document.body.style.userSelect = 'none';
+            });
+
+            // Right handle (preview resize)
+            rightHandle.addEventListener('mousedown', (e) => {
+                e.preventDefault();
+                isResizing = true;
+                currentResizeHandle = 'right';
+                rightHandle.classList.add('dragging');
+                document.body.style.cursor = 'col-resize';
+                document.body.style.userSelect = 'none';
+            });
+
+            // Mouse move
+            document.addEventListener('mousemove', (e) => {
+                if (!isResizing) return;
+
+                const pageRect = page.getBoundingClientRect();
+
+                if (currentResizeHandle === 'left') {
+                    // Resize left sidebar
+                    const newWidth = e.clientX - pageRect.left;
+                    if (newWidth >= 180 && newWidth <= 400) {
+                        leftColumnWidth = newWidth;
+                        updateColumnWidths();
+                    }
+                } else if (currentResizeHandle === 'right') {
+                    // Resize right preview panel
+                    const newWidth = pageRect.right - e.clientX;
+                    if (newWidth >= 300 && newWidth <= 800) {
+                        rightColumnWidth = newWidth;
+                        updateColumnWidths();
+                    }
+                }
+            });
+
+            // Mouse up
+            document.addEventListener('mouseup', () => {
+                if (isResizing) {
+                    isResizing = false;
+                    currentResizeHandle = null;
+                    leftHandle.classList.remove('dragging');
+                    rightHandle.classList.remove('dragging');
+                    document.body.style.cursor = '';
+                    document.body.style.userSelect = '';
+                }
+            });
+        }
+
+        function updateColumnWidths() {
+            const page = document.getElementById('page');
+            const leftHandle = document.getElementById('resize-left');
+            const rightHandle = document.getElementById('resize-right');
+
+            page.style.gridTemplateColumns = `${leftColumnWidth}px 1fr ${rightColumnWidth}px`;
+            leftHandle.style.left = `${leftColumnWidth}px`;
+            rightHandle.style.right = `${rightColumnWidth}px`;
+        }
+
+        // Handle WebSocket messages
+        function handleWebSocketMessage(message) {
+            console.log('📨 WebSocket message:', message);
+
+            switch (message.type) {
+                case 'build_progress':
+                    handleBuildProgress(message.data);
+                    break;
+                case 'file_change':
+                    handleFileChange(message.data);
+                    break;
+                case 'quality_metric':
+                    handleQualityMetric(message.data);
+                    break;
+                case 'build_complete':
+                    handleBuildComplete(message.data);
+                    break;
+                case 'build_error':
+                    handleBuildError(message.data);
+                    break;
+                default:
+                    console.log('Unknown message type:', message.type);
+            }
+        }
+
+        // Handle build progress updates
+        function handleBuildProgress(data) {
+            const progressText = data.progress !== undefined ? ` (${data.progress}%)` : '';
+            const logType = data.status === 'completed' ? 'success' : data.status === 'failed' ? 'error' : 'info';
+
+            addBuildLog(logType, `${data.message}${progressText}`);
+
+            // Update UI based on step
+            if (data.step === 'planning' && data.status === 'started') {
+                addChatMessage('system', '🤔 Analyzing your request and generating a plan...');
+            } else if (data.step === 'planning' && data.status === 'completed') {
+                addChatMessage('system', `✅ ${data.message}`);
+            } else if (data.step === 'execution' && data.status === 'started') {
+                addChatMessage('system', '⚙️ Building your application...');
+            } else if (data.step === 'completion' && data.status === 'completed') {
+                addChatMessage('system', `🎉 ${data.message}`);
+            } else if (data.status === 'failed') {
+                addChatMessage('system', `❌ ${data.message}`);
+            }
+        }
+
+        // Handle file change notifications
+        function handleFileChange(data) {
+            const logType = data.action === 'created' ? 'success' : data.action === 'deleted' ? 'warning' : 'info';
+            addBuildLog(logType, `File ${data.action}: ${data.path}`);
+
+            // Refresh file tree if this is the current project
+            if (currentProject && data.projectId === currentProject.id) {
+                updateFileTree();
+            }
+
+            // If file was created or modified, show in chat
+            if (data.action === 'created') {
+                addChatMessage('system', `✨ Created: ${data.path}`);
+            }
+        }
+
+        // Handle quality metric updates
+        function handleQualityMetric(data) {
+            addBuildLog(`📈 ${data.label}: ${data.value}`);
+            updateQualityInsights(data);
+        }
+
+        // Handle build complete
+        function handleBuildComplete(data) {
+            addBuildLog(`✅ Build complete (${data.duration}ms)`);
+            addChatMessage('system', `✅ Build complete! Generated ${data.files?.length || 0} files`);
+
+            // Update quality insights with build results
+            if (data.files) {
+                completeQualityInsights(data.files, data);
+            }
+
+            updateFileTree();
+            updatePreview();
+        }
+
+        // Handle build error
+        function handleBuildError(data) {
+            addBuildLog(`❌ Build error: ${data.error}`);
+            addChatMessage('system', `❌ Build error: ${data.error}`);
+
+            // Update status to error
+            qualityInsightsData.status = 'Error';
+            renderQualityInsights();
+        }
+
+        // Quality Insights State
+        let qualityInsightsData = {
+            status: 'Ready',
+            buildTime: null,
+            qualityScore: null,
+            fileCount: 0,
+            totalSize: 0,
+            technologies: [],
+            iterations: 0,
+            startTime: null
+        };
+
+        // Update quality insights display
+        function updateQualityInsights(data) {
+            // Handle different data types
+            if (data.metric) {
+                // WebSocket quality metric update
+                if (data.metric === 'quality_score') {
+                    qualityInsightsData.qualityScore = data.value;
+                }
+            } else if (data.result) {
+                // Full execution result
+                qualityInsightsData.qualityScore = data.result.qualityScore || data.qualityScore;
+                qualityInsightsData.iterations = data.result.iterations || data.iterations || 0;
+            }
+
+            renderQualityInsights();
+        }
+
+        function renderQualityInsights() {
+            // Status
+            document.getElementById('insight-status').textContent = qualityInsightsData.status;
+            document.getElementById('insight-status').style.color =
+                qualityInsightsData.status === 'Building' ? 'var(--primary)' :
+                qualityInsightsData.status === 'Complete' ? 'var(--success)' :
+                qualityInsightsData.status === 'Error' ? 'var(--error)' : 'var(--text-secondary)';
+
+            // Build Time
+            if (qualityInsightsData.buildTime !== null) {
+                document.getElementById('insight-build-time').textContent = `${qualityInsightsData.buildTime}ms`;
+            }
+
+            // Quality Score
+            if (qualityInsightsData.qualityScore !== null) {
+                const score = Math.round(qualityInsightsData.qualityScore * 100);
+                document.getElementById('insight-quality-score').textContent = `${score}/100`;
+                document.getElementById('insight-quality-fill').style.width = `${score}%`;
+
+                // Color based on score
+                const fill = document.getElementById('insight-quality-fill');
+                if (score >= 80) fill.style.background = 'var(--success)';
+                else if (score >= 60) fill.style.background = 'var(--warning)';
+                else fill.style.background = 'var(--error)';
+            }
+
+            // File Count
+            if (qualityInsightsData.fileCount > 0) {
+                document.getElementById('insight-file-count').textContent = qualityInsightsData.fileCount;
+            }
+
+            // Total Size
+            if (qualityInsightsData.totalSize > 0) {
+                document.getElementById('insight-total-size').textContent = formatBytes(qualityInsightsData.totalSize);
+            }
+
+            // Technologies
+            if (qualityInsightsData.technologies.length > 0) {
+                const techContainer = document.getElementById('insight-technologies');
+                techContainer.innerHTML = qualityInsightsData.technologies
+                    .map(tech => `<span class="tech-badge">${tech}</span>`)
+                    .join('');
+            }
+
+            // Iterations
+            if (qualityInsightsData.iterations > 0) {
+                document.getElementById('insight-iterations').textContent =
+                    `${qualityInsightsData.iterations} ${qualityInsightsData.iterations > 1 ? '(Improved ✨)' : ''}`;
+            }
+        }
+
+        function formatBytes(bytes) {
+            if (bytes === 0) return '0 B';
+            const k = 1024;
+            const sizes = ['B', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+        }
+
+        function detectTechnologies(files) {
+            const techs = new Set();
+
+            files.forEach(file => {
+                const ext = file.path.split('.').pop().toLowerCase();
+                const fileName = file.path.toLowerCase();
+
+                // Detect by extension
+                if (ext === 'html') techs.add('HTML');
+                if (ext === 'css') techs.add('CSS');
+                if (ext === 'js' || ext === 'jsx') techs.add('JavaScript');
+                if (ext === 'ts' || ext === 'tsx') techs.add('TypeScript');
+                if (ext === 'py') techs.add('Python');
+                if (ext === 'json') techs.add('JSON');
+                if (ext === 'md') techs.add('Markdown');
+
+                // Detect frameworks by filename
+                if (fileName.includes('react')) techs.add('React');
+                if (fileName.includes('vue')) techs.add('Vue');
+                if (fileName.includes('angular')) techs.add('Angular');
+                if (fileName === 'package.json') techs.add('Node.js');
+                if (fileName === 'requirements.txt') techs.add('Python');
+                if (fileName === 'dockerfile') techs.add('Docker');
+            });
+
+            return Array.from(techs);
+        }
+
+        function resetQualityInsights() {
+            qualityInsightsData = {
+                status: 'Building',
+                buildTime: null,
+                qualityScore: null,
+                fileCount: 0,
+                totalSize: 0,
+                technologies: [],
+                iterations: 0,
+                startTime: Date.now()
+            };
+            renderQualityInsights();
+        }
+
+        function completeQualityInsights(files, execution) {
+            qualityInsightsData.status = 'Complete';
+            qualityInsightsData.buildTime = Date.now() - qualityInsightsData.startTime;
+            qualityInsightsData.fileCount = files.length;
+            qualityInsightsData.totalSize = files.reduce((sum, f) => sum + (f.size || f.content?.length || 0), 0);
+            qualityInsightsData.technologies = detectTechnologies(files);
+
+            if (execution) {
+                qualityInsightsData.qualityScore = execution.qualityScore || execution.result?.qualityScore;
+                qualityInsightsData.iterations = execution.iterations || execution.result?.iterations || 1;
+            }
+
+            renderQualityInsights();
+        }
+
+        // ========================================
+        // PROVIDER METRICS
+        // ========================================
+
+        async function refreshProviderMetrics() {
+            try {
+                const response = await fetch('/api/builder/metrics/provider');
+                const result = await response.json();
+
+                if (!result.success) {
+                    console.error('Failed to fetch provider metrics:', result.error);
+                    document.getElementById('metrics-status').textContent = 'Error';
+                    document.getElementById('metrics-status').style.color = 'var(--error)';
+                    return;
+                }
+
+                const data = result.data;
+
+                if (!data.enabled) {
+                    document.getElementById('metrics-status').textContent = 'Disabled';
+                    document.getElementById('metrics-status').style.color = 'var(--text-secondary)';
+                    return;
+                }
+
+                // Update status
+                document.getElementById('metrics-status').textContent = 'Active';
+                document.getElementById('metrics-status').style.color = 'var(--success)';
+
+                // Update summary metrics
+                const summary = data.summary;
+                document.getElementById('metrics-total').textContent = summary.totalGenerations || 0;
+                document.getElementById('metrics-response-time').textContent =
+                    summary.avgResponseTime ? `${summary.avgResponseTime}ms` : '—';
+                document.getElementById('metrics-quality').textContent =
+                    summary.avgQualityScore ? `${summary.avgQualityScore}%` : '—';
+                document.getElementById('metrics-escalations').textContent = summary.escalations || 0;
+
+                // Update quality bar
+                if (summary.avgQualityScore) {
+                    const fill = document.getElementById('metrics-quality-fill');
+                    fill.style.width = `${summary.avgQualityScore}%`;
+                }
+
+                // Update provider usage
+                const providerUsage = data.providerUsage;
+                const providersDiv = document.getElementById('metrics-providers');
+                if (Object.keys(providerUsage).length > 0) {
+                    const total = Object.values(providerUsage).reduce((sum, count) => sum + count, 0);
+                    const usageHtml = Object.entries(providerUsage)
+                        .map(([provider, count]) => {
+                            const percentage = Math.round((count / total) * 100);
+                            const shortName = provider.replace('ollama-', '').replace('qwen2.5-coder:', '');
+                            return `<div style="margin-bottom: 4px;">
+                                <strong>${shortName}</strong>: ${count} (${percentage}%)
+                            </div>`;
+                        })
+                        .join('');
+                    providersDiv.innerHTML = usageHtml;
+                } else {
+                    providersDiv.innerHTML = '—';
+                }
+
+                console.log('✅ Provider metrics refreshed');
+            } catch (error) {
+                console.error('Error refreshing provider metrics:', error);
+                document.getElementById('metrics-status').textContent = 'Error';
+                document.getElementById('metrics-status').style.color = 'var(--error)';
+            }
+        }
+
+        // Auto-refresh metrics every 10 seconds
+        setInterval(refreshProviderMetrics, 10000);
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('Application Builder Dashboard loaded');
+            loadProjects();
+            // Monaco editor is now lazy-loaded when Code tab is clicked
+            initializeWebSocket();
+            initializeColumnResize();
+            setAppMode('Build');
+            // Set Preview as default tab
+            switchWorkspaceTab('preview');
+            // Load provider metrics
+            refreshProviderMetrics();
+        });
+
+        function initializeMonacoEditor() {
+            // Prevent multiple initializations
+            if (monacoEditor) {
+                console.log('Monaco Editor already initialized');
+                return;
+            }
+
+            console.log('Initializing Monaco Editor...');
+            require(['vs/editor/editor.main'], function () {
+                const editorContainer = document.getElementById('code-editor');
+                editorContainer.innerHTML = '';
+
+                monacoEditor = monaco.editor.create(editorContainer, {
+                    value: '// Select a file from the file browser to edit',
+                    language: 'javascript',
+                    theme: 'vs-light',
+                    automaticLayout: true,
+                    minimap: { enabled: false },
+                    fontSize: 13,
+                    lineNumbers: 'on',
+                    scrollBeyondLastLine: false,
+                    readOnly: true
+                });
+
+                console.log('✅ Monaco Editor initialized');
+            });
+        }
+
+        // Project Management and other functions (unchanged)
+        function resetUI() {
+            const chatMessages = document.getElementById('chat-messages');
+            chatMessages.innerHTML = '<p style="color: var(--text-secondary); text-align: center; margin-top: 100px;">Start building by describing what you want to create</p>';
+
+            const buildLog = document.getElementById('build-log');
+            buildLog.innerHTML = '<p style="color: var(--text-secondary);">Ready to build</p>';
+
+            const insights = document.getElementById('quality-insights');
+            insights.innerHTML = '<p style="color: var(--text-secondary); font-size: 13px;">No build yet</p>';
+
+            if (monacoEditor) {
+                monacoEditor.setValue('');
+                monacoEditor.updateOptions({ readOnly: true });
+            }
+
+            const previewIframe = document.getElementById('preview-iframe');
+            const previewPlaceholder = document.getElementById('preview-placeholder');
+            previewIframe.src = '';
+            previewPlaceholder.style.display = 'grid';
+
+            currentBuildId = null;
+            currentFilePath = null;
+            if (buildPollingInterval) {
+                clearInterval(buildPollingInterval);
+                buildPollingInterval = null;
+            }
+        }
+
+        async function newProject() {
+            const name = prompt('Enter project name:');
+            if (!name) return;
+
+            const description = prompt('Enter project description (optional):') || '';
+
+            try {
+                const response = await fetch('/api/builder/projects/new', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, description })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    resetUI();
+                    currentProject = result.data;
+                    addChatMessage('system', `✅ Project "${name}" created`);
+                    updateFileTree();
+                    loadProjects(); // Refresh project list
+                } else {
+                    addChatMessage('system', `❌ Error: ${result.error}`);
+                }
+            } catch (error) {
+                console.error('Error creating project:', error);
+                addChatMessage('system', `❌ Error: ${error.message}`);
+            }
+        }
+
+        async function loadProjects() {
+            try {
+                const response = await fetch('/api/builder/projects');
+                const result = await response.json();
+
+                const projectList = document.getElementById('project-list');
+
+                if (result.success && result.data.length > 0) {
+                    projectList.innerHTML = '';
+                    result.data.forEach(project => {
+                        const projectDiv = document.createElement('div');
+                        projectDiv.style.padding = '8px';
+                        projectDiv.style.marginBottom = '4px';
+                        projectDiv.style.background = 'var(--surface)';
+                        projectDiv.style.borderRadius = '6px';
+                        projectDiv.style.cursor = 'pointer';
+                        projectDiv.style.fontSize = '13px';
+                        projectDiv.style.transition = 'all 0.2s';
+                        projectDiv.innerHTML = `
+                            <div style="font-weight: 500; color: var(--text-primary);">${project.name}</div>
+                            <div style="font-size: 11px; color: var(--text-secondary); margin-top: 2px;">${new Date(project.createdAt).toLocaleDateString()}</div>`;
+                        projectDiv.onclick = () => selectProject(project);
+                        projectDiv.onmouseenter = () => {
+                            projectDiv.style.background = 'var(--primary)';
+                            projectDiv.style.color = 'white';
+                            projectDiv.querySelector('div:first-child').style.color = 'white';
+                            projectDiv.querySelector('div:last-child').style.color = 'rgba(255,255,255,0.8)';
+                        };
+                        projectDiv.onmouseleave = () => {
+                            if (!currentProject || currentProject.id !== project.id) {
+                                projectDiv.style.background = 'var(--surface)';
+                                projectDiv.style.color = 'var(--text-primary)';
+                                projectDiv.querySelector('div:first-child').style.color = 'var(--text-primary)';
+                                projectDiv.querySelector('div:last-child').style.color = 'var(--text-secondary)';
+                            }
+                        };
+                        projectList.appendChild(projectDiv);
+                    });
+                } else {
+                    projectList.innerHTML = '<p class="muted-small">No projects yet</p>';
+                }
+            } catch (error) {
+                console.error('Error loading projects:', error);
+                const projectList = document.getElementById('project-list');
+                projectList.innerHTML = '<p style="color: var(--error); font-size: 13px;">Error loading projects</p>';
+            }
+        }
+
+        function selectProject(project) {
+            resetUI();
+            currentProject = project;
+            addChatMessage('system', `📂 Opened project: ${project.name}`);
+            updateFileTree();
+        }
+
+        function addChatMessage(type, content) {
+            const chatMessages = document.getElementById('chat-messages');
+
+            // Clear welcome message on first real message
+            const welcomeMsg = chatMessages.querySelector('.chat-message.system');
+            if (welcomeMsg && welcomeMsg.textContent.includes('Welcome')) {
+                chatMessages.innerHTML = '';
+            }
+
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `chat-message ${type}`;
+
+            const contentDiv = document.createElement('div');
+            contentDiv.textContent = content;
+            messageDiv.appendChild(contentDiv);
+
+            const timestamp = document.createElement('div');
+            timestamp.className = 'chat-timestamp';
+            timestamp.textContent = new Date().toLocaleTimeString();
+            messageDiv.appendChild(timestamp);
+
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        function clearChat() {
+            document.getElementById('chat-messages').innerHTML = '<p style="color: var(--text-secondary); text-align: center; margin-top: 100px;">Start building by describing what you want to create below</p>';
+            document.getElementById('prompt_composer').value = '';
+            document.getElementById('build-log').innerHTML = '<p style="color: var(--text-secondary);">Ready to build</p>';
+            conversationHistory = [];
+        }
+
+        const DEFAULT_AGENT_PERSONA = `Act as a friendly junior coder in a new app designed to help users build applications. Your role is to be proactive and always think ahead about what users might need. Engage users by asking insightful questions and offering helpful suggestions throughout their coding journey. Focuses on best practices, debugging help, and encouragement.`;
+        let agentPersona = localStorage.getItem('agentPersona') || DEFAULT_AGENT_PERSONA;
+
+        function openAgentSettings() { document.getElementById('agent-persona').value = agentPersona; document.getElementById('agent-settings-modal').classList.add('active'); }
+        function closeAgentSettings() { document.getElementById('agent-settings-modal').classList.remove('active'); }
+
+        async function openTechnologySettings() { document.getElementById('technology-settings-modal').classList.add('active'); await loadTechnologies(); }
+        function closeTechnologySettings() { document.getElementById('technology-settings-modal').classList.remove('active'); }
+
+        async function loadTechnologies() {
+            const listEl = document.getElementById('technology-list');
+            listEl.innerHTML = '<p class="muted-small">Loading technologies...</p>';
+            try {
+                const techResponse = await fetch('/api/technologies');
+                const techData = await techResponse.json();
+                const statusResponse = await fetch('/api/technologies/status');
+                const statusData = await statusResponse.json();
+                if (!techData.success || !statusData.success) throw new Error('Failed to load technologies');
+                const technologies = techData.data; const statuses = statusData.data; const statusMap = {}; statuses.forEach(s => statusMap[s.id] = s);
+                listEl.innerHTML = technologies.map(tech => {
+                    const status = statusMap[tech.id] || { operational: false, available: false };
+                    const isOperational = status.operational; const icon = isOperational ? '✅' : '❌'; const statusClass = isOperational ? 'operational' : 'not-operational'; const statusText = isOperational ? 'Operational' : 'Not Running';
+                    return `
+                        <div style="background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:20px; display:flex; gap:20px;">
+                            <div style="font-size:32px; width:48px; height:48px; display:grid; place-items:center; border-radius:12px; background:var(--bg-neutral-50); ${isOperational ? 'color: var(--success); background: rgba(52,199,89,.1);' : 'color: var(--error); background: rgba(255,59,48,.1);'}">${icon}</div>
+                            <div style="flex:1;">
+                                <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px;">
+                                    <div>
+                                        <div style="font-size:16px; font-weight:600;">${tech.name}</div>
+                                        <div style="display:flex; gap:8px; align-items:center; margin-top:4px;">
+                                            <span style="font-size:12px; ${isOperational ? 'color: var(--success);' : 'color: var(--error);'} font-weight:500;">${statusText}</span>
+                                            <span style="font-size:11px; padding:4px 8px; border-radius:6px; ${tech.required ? 'background: rgba(255,149,0,.1); color: var(--warning);' : 'background: rgba(88,86,214,.1); color: var(--secondary);'}">${tech.required ? 'Required' : 'Optional'}</span>
+                                            ${status.port ? `<span style="font-size: 11px; color: var(--text-secondary);">Port: ${status.port}</span>` : ''}
+                                        </div>
+                                    </div>
+                                    <div>
+                                        ${!isOperational && tech.startCommand ? `<button class=\"btn btn-primary btn-inline\" onclick=\"startTechnology('${tech.id}')\">▶️ Start</button>` : ''}
+                                    </div>
+                                </div>
+                                <div class="muted-small" style="margin-bottom:8px;">${tech.description}</div>
+                                <div class="muted-small" style="background: var(--bg-neutral-50); padding:8px 12px; border-radius:8px; margin-bottom:8px;"><strong>Problem Solved:</strong> ${tech.problem}</div>
+                                ${tech.paperUrl ? `<a href="${tech.paperUrl}" target="_blank" style="font-size:12px; color: var(--primary); text-decoration:none;">📄 ${tech.paperTitle || 'Read Research Paper'} →</a>` : ''}
+                            </div>
+                        </div>`;
+                }).join('');
+            } catch (error) {
+                console.error('Failed to load technologies:', error);
+                listEl.innerHTML = `<div style="padding:20px; text-align:center; color: var(--error);"><p>❌ Failed to load technologies</p><p class="muted-small" style="margin-top:8px;">${error.message}</p></div>`;
+            }
+        }
+
+        async function startTechnology(techId) {
+            try {
+                const response = await fetch(`/api/technologies/${techId}/start`, { method: 'POST' });
+                const data = await response.json();
+                if (data.success) addChatMessage('system', `✅ ${data.data.message}`); else addChatMessage('system', `❌ ${data.error.message}`);
+                await loadTechnologies();
+            } catch (error) { console.error('Failed to start technology:', error); addChatMessage('system', `❌ Failed to start technology: ${error.message}`); }
+        }
+
+        async function refreshTechnologies() { await fetch('/api/technologies/cache/clear', { method: 'POST' }); await loadTechnologies(); }
+
+        function saveAgentSettings() {
+            const newPersona = document.getElementById('agent-persona').value.trim();
+            if (!newPersona) { alert('Please enter an agent persona description'); return; }
+            agentPersona = newPersona; localStorage.setItem('agentPersona', agentPersona); closeAgentSettings(); addChatMessage('system', '✅ Agent settings saved! The AI will now use your custom persona.');
+        }
+        function resetAgentSettings() { if (confirm('Reset to default agent persona?')) { agentPersona = DEFAULT_AGENT_PERSONA; localStorage.removeItem('agentPersona'); document.getElementById('agent-persona').value = DEFAULT_AGENT_PERSONA; addChatMessage('system', '🔄 Agent settings reset to default.'); } }
+
+        let chatMode = 'chat';
+        let conversationHistory = [];
+        let qualityMode = false;
+
+        function toggleChatMode() {
+            chatMode = chatMode === 'chat' ? 'build' : 'chat';
+            const btn = document.getElementById('chat-mode-btn');
+            const indicator = document.getElementById('mode-indicator');
+            if (btn && indicator) {
+                if (chatMode === 'chat') { btn.textContent = '💬 Chat (Proactive)'; btn.classList.remove('btn-primary'); btn.classList.add('btn-secondary'); indicator.textContent = 'Chat mode: Ask questions & get suggestions'; }
+                else { btn.textContent = '🔨 Build (Execute)'; btn.classList.remove('btn-secondary'); btn.classList.add('btn-primary'); indicator.textContent = 'Build mode: Create files directly'; }
+            }
+            updateSegmentedControl();
+        }
+        function setAppMode(mode) { if (mode === 'Build' && chatMode !== 'build') toggleChatMode(); if (mode === 'Ask' && chatMode !== 'chat') toggleChatMode(); updateSegmentedControl(); }
+        function updateSegmentedControl() {
+            const buildBtn = document.getElementById('app_mode_build');
+            const askBtn = document.getElementById('app_mode_ask');
+            if (!buildBtn || !askBtn) return;
+            if (chatMode === 'build') { buildBtn.style.background = 'var(--primary)'; buildBtn.style.color = '#fff'; askBtn.style.background = 'var(--surface)'; askBtn.style.color = 'var(--text-primary)'; }
+            else { askBtn.style.background = 'var(--primary)'; askBtn.style.color = '#fff'; buildBtn.style.background = 'var(--surface)'; buildBtn.style.color = 'var(--text-primary)'; }
+        }
+
+        function toggleQualityMode() {
+            qualityMode = !qualityMode;
+            const btn = document.getElementById('quality-mode-btn');
+            if (btn) {
+                if (qualityMode) { btn.textContent = '✨ Quality: ON'; btn.classList.remove('btn-secondary'); btn.classList.add('btn-primary'); addChatMessage('system', '✨ Quality Mode enabled! Code will be iteratively improved (Pack 11 Phase 2)'); }
+                else { btn.textContent = '✨ Quality: OFF'; btn.classList.remove('btn-primary'); btn.classList.add('btn-secondary'); addChatMessage('system', '⚡ Quality Mode disabled. Using fast generation.'); }
+            }
+        }
+
+        async function sendBuildRequest() {
+            const input = document.getElementById('prompt_composer');
+            const request = input.value.trim();
+            if (!request) { alert('Please enter a build request'); return; }
+            if (!currentProject) { alert('Please create a project first'); return; }
+            addChatMessage('user', request); input.value = '';
+            if (chatMode === 'chat') await sendChatMessage(request); else await sendBuildExecute(request);
+        }
+
+        function sleep(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
+        function removeLastNMessages(n) {
+            const chatMessages = document.getElementById('chat-messages');
+            for (let i = 0; i < n; i++) { if (chatMessages.lastChild && !chatMessages.querySelector('p[style*="margin-top: 100px"]')) { chatMessages.removeChild(chatMessages.lastChild); } }
+        }
+
+        async function sendChatMessage(message) {
+            conversationHistory.push({ role: 'user', content: message });
+            addChatMessage('system', '📖 Understanding your request...'); await sleep(400);
+            addChatMessage('system', '🔍 Analyzing project context...'); await sleep(400);
+            addChatMessage('system', '💭 Preparing response...');
+            try {
+                const response = await fetch('/api/builder/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message, projectId: currentProject?.id, conversationHistory: conversationHistory.slice(-10), customPersona: agentPersona }) });
+                const result = await response.json();
+                removeLastNMessages(3);
+                if (result.success) { const aiMessage = result.data.message; addChatMessage('ai', aiMessage); conversationHistory.push({ role: 'assistant', content: aiMessage }); }
+                else { addChatMessage('ai', `❌ Error: ${result.error}`); }
+            } catch (error) { console.error('Error sending chat message:', error); removeLastNMessages(3); addChatMessage('ai', `❌ Error: ${error.message}`); }
+        }
+
+        async function sendBuildExecute(request) {
+            resetQualityInsights(); // Reset insights at build start
+            addChatMessage('system', qualityMode ? '✨ Starting build with quality improvement...' : '🤔 Starting build...');
+            addBuildLog('info', 'Build started');
+
+            try {
+                const response = await fetch('/api/builder/build', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        prompt: request,
+                        projectId: currentProject?.id,
+                        useQuality: qualityMode
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    const { duration, files, qualityScore, iterations, improved } = result.data;
+
+                    // Success message
+                    const durationSec = (duration / 1000).toFixed(1);
+                    let successMsg = `✅ Build complete in ${durationSec}s! Generated ${files.length} files`;
+
+                    if (qualityScore) {
+                        const qualityPercent = Math.round(qualityScore * 100);
+                        successMsg += ` (Quality: ${qualityPercent}%)`;
+                    }
+
+                    if (improved && iterations > 1) {
+                        successMsg += ` ✨ Improved through ${iterations} iterations`;
+                    }
+
+                    addChatMessage('system', successMsg);
+                    addBuildLog('success', successMsg);
+
+                    // Update file tree and preview
+                    await updateFileTree();
+                    await updatePreview();
+
+                    // Switch to preview tab
+                    switchWorkspaceTab('preview');
+
+                } else {
+                    addChatMessage('ai', `❌ Build failed: ${result.error}`);
+                    addBuildLog('error', `Build failed: ${result.error}`);
+                    qualityInsightsData.status = 'Error';
+                    renderQualityInsights();
+                }
+
+            } catch (error) {
+                console.error('Error sending build request:', error);
+                addChatMessage('ai', `❌ Error: ${error.message}`);
+                addBuildLog('error', `Error: ${error.message}`);
+                qualityInsightsData.status = 'Error';
+                renderQualityInsights();
+            }
+        }
+
+        // Legacy endpoints (kept for backward compatibility)
+        async function sendBuildWithQuality(request) {
+            resetQualityInsights();
+            addChatMessage('system', '✨ Generating with quality improvement...');
+            try {
+                const response = await fetch('/api/builder/generate-with-improvement', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt: request, projectId: currentProject?.id, maxIterations: 2 }) });
+                const result = await response.json();
+                if (result.success) {
+                    const { code, qualityScore, iterations, improved } = result.data;
+                    const qualityPercent = Math.round((qualityScore || 0) * 100);
+                    const improvementMsg = improved ? `✨ Code improved through ${iterations} iterations (Quality: ${qualityPercent}%)` : `✅ Code generated (Quality: ${qualityPercent}%)`;
+                    addChatMessage('system', improvementMsg);
+                    addChatMessage('ai', code);
+                    addBuildLog('success', improvementMsg);
+                    updateQualityInsights({ qualityScore, iterations });
+                }
+                else { addChatMessage('ai', `❌ Error: ${result.error}`); }
+            } catch (error) { console.error('Error with quality generation:', error); addChatMessage('ai', `❌ Error: ${error.message}`); }
+        }
+
+        async function sendBuildDirect(request) {
+            resetQualityInsights();
+            addChatMessage('system', '🤔 Analyzing request...');
+            try {
+                const enhancedTask = `${request}\n\nIMPORTANT: Create all files in the project directory: projects/${currentProject?.name}/\n\nUse the write_file tool to create the following files:\n- index.html (in projects/${currentProject?.name}/)\n- styles.css (in projects/${currentProject?.name}/)\n- script.js (in projects/${currentProject?.name}/)\n\nMake sure to use the write_file tool for each file.`;
+                const response = await fetch('/api/agent/execute-async', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ task: enhancedTask, userId: 'builder-user' }) });
+                const result = await response.json();
+                if (result.success) { currentBuildId = result.data.executionId; addChatMessage('system', '⏳ Build started...'); addBuildLog('info', 'Build started'); startBuildPolling(); }
+                else { addChatMessage('ai', `❌ Error: ${result.error}`); }
+            } catch (error) { console.error('Error sending build request:', error); addChatMessage('ai', `❌ Error: ${error.message}`); }
+        }
+
+        function startBuildPolling() {
+            if (buildPollingInterval) clearInterval(buildPollingInterval);
+            buildPollingInterval = setInterval(async () => {
+                try {
+                    const response = await fetch(`/api/agent/status/${currentBuildId}`);
+                    const result = await response.json();
+                    if (result.success) {
+                        const execution = result.data;
+                        if (execution.status === 'completed') { clearInterval(buildPollingInterval); handleBuildComplete(execution); }
+                        else if (execution.status === 'failed') { clearInterval(buildPollingInterval); handleBuildFailed(execution); }
+                    }
+                } catch (error) { console.error('Error polling build status:', error); }
+            }, 2000);
+        }
+
+        async function handleBuildComplete(execution) {
+            addChatMessage('ai', '✅ Build completed successfully!');
+            addBuildLog('success', 'Build completed');
+            if (execution.result && execution.result.output) {
+                let outputText = '';
+                if (typeof execution.result.output === 'string') outputText = execution.result.output;
+                else if (Array.isArray(execution.result.output)) outputText = execution.result.output.map(item => { if (typeof item === 'string') return item; if (item.content) return item.content; if (item.text) return item.text; return JSON.stringify(item, null, 2); }).join('\n\n');
+                else outputText = JSON.stringify(execution.result.output, null, 2);
+                if (outputText.trim()) addChatMessage('ai', outputText);
+            }
+
+            // Get file list for quality insights
+            try {
+                const response = await fetch(`/api/builder/projects/${currentProject.id}/files`);
+                const result = await response.json();
+                if (result.success) {
+                    completeQualityInsights(result.data, execution);
+                }
+            } catch (error) {
+                console.error('Error getting files for quality insights:', error);
+            }
+
+            autoRefreshPreview();
+            updateFileTree();
+        }
+
+        function handleBuildFailed(execution) { const errorMsg = execution.error || 'Build failed'; addChatMessage('ai', `❌ Build failed: ${errorMsg}`); addBuildLog('error', `Build failed: ${errorMsg}`); }
+
+        function addBuildLog(type, message) {
+            const buildLog = document.getElementById('build-log');
+            if (buildLog.querySelector('p[style*="color: var(--text-secondary)"]')) buildLog.innerHTML = '';
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = document.createElement('div');
+            logEntry.style.marginBottom = '4px';
+            let icon = 'ℹ️'; let color = 'var(--text-primary)';
+            if (type === 'success') { icon = '✅'; color = 'var(--success)'; }
+            else if (type === 'error') { icon = '❌'; color = 'var(--error)'; }
+            else if (type === 'warning') { icon = '⚠️'; color = 'var(--warning)'; }
+            logEntry.innerHTML = `<span style="color: var(--text-secondary)">${timestamp}</span> <span style="color: ${color}">${icon} ${message}</span>`;
+            buildLog.appendChild(logEntry); buildLog.scrollTop = buildLog.scrollHeight;
+        }
+
+        async function updateFileTree() {
+            if (!currentProject) { document.getElementById('file-tree').innerHTML = '<p class="muted-small">No project open</p>'; return; }
+            try {
+                const response = await fetch(`/api/builder/projects/${currentProject.id}/files`);
+                const result = await response.json();
+                if (result.success) {
+                    const fileTree = document.getElementById('file-tree');
+                    fileTree.innerHTML = ''; fileTree.className = 'file-tree';
+                    renderFileTree(result.data, fileTree);
+                }
+            } catch (error) { console.error('Error loading file tree:', error); }
+        }
+
+        function renderFileTree(items, container, level = 0) {
+            items.forEach(item => {
+                if (item.type === 'directory') {
+                    const folderDiv = document.createElement('div');
+                    folderDiv.className = 'file-tree-item file-tree-folder';
+                    folderDiv.style.paddingLeft = `${level * 12 + 8}px`;
+                    const toggle = document.createElement('span'); toggle.className = 'folder-toggle'; toggle.textContent = '▼';
+                    const icon = document.createElement('span'); icon.className = 'file-icon'; icon.textContent = '📁';
+                    const name = document.createElement('span'); name.textContent = item.name;
+                    folderDiv.appendChild(toggle); folderDiv.appendChild(icon); folderDiv.appendChild(name);
+                    const childrenDiv = document.createElement('div'); childrenDiv.className = 'file-tree-children';
+                    folderDiv.addEventListener('click', (e) => { e.stopPropagation(); const isOpen = toggle.textContent === '▼'; toggle.textContent = isOpen ? '▶' : '▼'; childrenDiv.style.display = isOpen ? 'none' : 'block'; });
+                    container.appendChild(folderDiv);
+                    if (item.children && item.children.length > 0) { renderFileTree(item.children, childrenDiv, level + 1); container.appendChild(childrenDiv); }
+                } else {
+                    const fileDiv = document.createElement('div'); fileDiv.className = 'file-tree-item'; fileDiv.style.paddingLeft = `${level * 12 + 32}px`;
+                    const icon = document.createElement('span'); icon.className = 'file-icon'; icon.textContent = getFileIcon(item.name);
+                    const name = document.createElement('span'); name.textContent = item.name; fileDiv.appendChild(icon); fileDiv.appendChild(name);
+                    fileDiv.addEventListener('click', () => { openFile(item.path); document.querySelectorAll('.file-tree-item').forEach(el => el.classList.remove('active')); fileDiv.classList.add('active'); });
+                    container.appendChild(fileDiv);
+                }
+            });
+        }
+
+        function getFileIcon(filename) {
+            const ext = filename.split('.').pop().toLowerCase();
+            const icons = { js: '📜', ts: '📘', json: '📋', html: '🌐', css: '🎨', md: '📝', txt: '📄', py: '🐍', java: '☕', cpp: '⚙️', c: '⚙️', go: '🔵', rs: '🦀', sh: '🔧', yml: '⚙️', yaml: '⚙️', xml: '📰', svg: '🖼️', png: '🖼️', jpg: '🖼️', gif: '🖼️' };
+            return icons[ext] || '📄';
+        }
+
+        async function openFile(filePath) {
+            if (!monacoEditor) { console.error('Monaco Editor not initialized'); return; }
+            try {
+                const response = await fetch(`/api/builder/files/${currentProject.id}?path=${encodeURIComponent(filePath)}`);
+                if (!response.ok) { addBuildLog('error', `Failed to open file: ${filePath}`); return; }
+                const result = await response.json();
+                if (result.success) {
+                    currentFilePath = filePath;
+                    const ext = filePath.split('.').pop().toLowerCase();
+                    const languageMap = { js: 'javascript', ts: 'typescript', json: 'json', html: 'html', css: 'css', md: 'markdown', py: 'python', java: 'java', cpp: 'cpp', c: 'c', go: 'go', rs: 'rust', sh: 'shell', yml: 'yaml', yaml: 'yaml', xml: 'xml', txt: 'plaintext' };
+                    const language = languageMap[ext] || 'plaintext';
+                    monaco.editor.setModelLanguage(monacoEditor.getModel(), language);
+                    monacoEditor.setValue(result.data.content);
+                    monacoEditor.updateOptions({ readOnly: false });
+                    addBuildLog('info', `Opened: ${filePath}`);
+                } else { addBuildLog('error', `Error: ${result.error}`); }
+            } catch (error) { console.error('Error opening file:', error); addBuildLog('error', `Error opening file: ${error.message}`); }
+        }
+
+        async function saveCurrentFile() {
+            if (!currentFilePath || !monacoEditor) { alert('No file is currently open'); return; }
+            try {
+                const content = monacoEditor.getValue();
+                const response = await fetch(`/api/builder/files/${currentProject.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ path: currentFilePath, content }) });
+                const result = await response.json();
+                if (result.success) addBuildLog('success', `Saved: ${currentFilePath}`); else addBuildLog('error', `Save failed: ${result.error}`);
+            } catch (error) { console.error('Error saving file:', error); addBuildLog('error', `Error saving file: ${error.message}`); }
+        }
+
+        // Removed duplicate updateQualityInsights - using comprehensive version above
+
+        function refreshPreview() {
+            if (!currentProject) { alert('No project is open'); return; }
+            const iframe = document.getElementById('preview-iframe');
+            const placeholder = document.getElementById('preview-placeholder');
+            const previewUrl = `/projects/${currentProject.name}/index.html`;
+            iframe.src = previewUrl;
+            iframe.onload = () => { placeholder.style.display = 'none'; addBuildLog('info', 'Preview refreshed'); };
+            iframe.onerror = () => { placeholder.style.display = 'grid'; addBuildLog('warning', 'No index.html found in project'); };
+        }
+
+        function openPreviewInNewTab() { if (!currentProject) { alert('No project is open'); return; } const previewUrl = `/projects/${currentProject.name}/index.html`; window.open(previewUrl, '_blank'); }
+        function autoRefreshPreview() { setTimeout(() => { refreshPreview(); switchWorkspaceTab('preview'); }, 500); }
+        function updatePreview() { autoRefreshPreview(); }
+
+        function toggleAccordion(id) {
+            const content = document.getElementById(id);
+            const toggle = content.previousElementSibling.querySelector('.accordion-toggle');
+            const isCollapsed = content.classList.contains('collapsed');
+
+            if (isCollapsed) {
+                // Expand
+                content.classList.remove('collapsed');
+                if (toggle) toggle.classList.remove('collapsed');
+            } else {
+                // Collapse
+                content.classList.add('collapsed');
+                if (toggle) toggle.classList.add('collapsed');
+            }
+        }
+
+        function showModeHelp() { document.getElementById('mode-help-modal').style.display = 'flex'; }
+        function closeModeHelp() { document.getElementById('mode-help-modal').style.display = 'none'; }
+
+        function switchWorkspaceTab(name) {
+            document.querySelectorAll('.tab').forEach(btn => { btn.classList.toggle('active', btn.getAttribute('data-tab') === name); });
+            document.querySelectorAll('.panel-screen').forEach(panel => { panel.classList.toggle('active', panel.id === `tab-${name}`); });
+
+            // Lazy-load Monaco editor when Code tab is clicked
+            if (name === 'code' && !monacoEditor) {
+                initializeMonacoEditor();
+            }
+        }
+
+        document.addEventListener('click', (e) => { const modal = document.getElementById('mode-help-modal'); if (e.target === modal) closeModeHelp(); });
+        document.addEventListener('keydown', (e) => {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); sendBuildRequest(); }
+            if ((e.ctrlKey || e.metaKey) && (e.key.toLowerCase() === 's')) { e.preventDefault(); saveCurrentFile(); }
+            if (e.key === 'Escape') { closeModeHelp(); }
+        });
+    </script>
+
+    <!-- Mode Help Modal (preserved) -->
+    <div id="mode-help-modal" class="modal" style="display:none;">
+        <div class="modal-content" style="max-width: 600px;">
+            <h3>🎯 Understanding the Modes</h3>
+            <h4>💬 Chat Mode (Proactive)</h4>
+            <p class="muted-small">The AI acts like a helpful assistant who asks questions and gives suggestions.</p>
+            <strong>When to use:</strong>
+            <ul class="muted-small">
+                <li>When you're not sure exactly what you want</li>
+                <li>When you want ideas and suggestions</li>
+                <li>When you need help planning your project</li>
+                <li>When you want to discuss options before building</li>
+            </ul>
+            <div style="background: var(--bg-neutral-50); border-left: 3px solid var(--primary); padding: 12px; border-radius: 4px; margin: 12px 0;" class="muted-small">
+                <strong>Example:</strong><br>
+                You: "I want to create a website for my business"<br><br>
+                AI: I'd love to help! A few questions: 1) What type of business? 2) Contact form? 3) Responsive? 4) Showcase products or services?
+            </div>
+            <h4>🔨 Build Mode (Direct)</h4>
+            <p class="muted-small">The AI immediately starts building what you ask for without asking questions.</p>
+            <h4>✨ Quality Mode (ON/OFF)</h4>
+            <p class="muted-small">When ON, the AI reviews and improves its own code before giving it to you.</p>
+            <div style="text-align:center; margin-top: 16px;">
+                <button class="btn btn-primary" onclick="closeModeHelp()">Got it!</button>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
