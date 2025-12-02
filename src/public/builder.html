@@ -517,7 +517,10 @@
     </div>
 
     <script>
-        // JavaScript preserved exactly as provided previously (no changes to logic)
+        // Application Builder Dashboard - v2.0 (Build/Ask toggle removed)
+        // Last updated: 2025-12-02
+        console.log('🎨 Application Builder Dashboard v2.0 loaded');
+
         // State
         let currentProject = null;
         let currentBuildId = null;
@@ -1046,6 +1049,7 @@
         }
 
         async function newProject() {
+            console.log('📁 newProject called'); // Debug log
             const name = prompt('Enter project name:');
             if (!name) return;
 
@@ -1246,6 +1250,7 @@
         }
 
         async function sendBuildRequest() {
+            console.log('🚀 sendBuildRequest called'); // Debug log
             const input = document.getElementById('prompt_composer');
             const request = input.value.trim();
 
@@ -1266,6 +1271,7 @@
             input.value = '';
 
             // Always build (no mode toggle)
+            console.log('🔨 Calling sendBuildExecute...'); // Debug log
             await sendBuildExecute(request);
         }
 
