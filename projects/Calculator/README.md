@@ -1,3 +1,3 @@
-# CAlculator
+# Calculator
 
 No description provided

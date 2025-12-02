@@ -512,27 +512,30 @@ Description: ${project.description || 'No description'}`;
       }
 
       // Build the enhanced task with project context
-      // Get relative path from workspace root for tool calls
-      const relativeProjectPath = `projects/${project.name}`;
-
       const enhancedTask = `${prompt}
 
 IMPORTANT INSTRUCTIONS:
-- You are building for project: ${project.name}
-- Create all files using the write_file tool with FULL PATHS starting with: ${relativeProjectPath}/
-- For example: write_file with path "${relativeProjectPath}/index.html"
+- You are building: ${project.name}
 - Generate a complete, working application
-- Include index.html, styles.css, and script.js at minimum
+- Include index.html, styles.css, and script.js
 - Make sure all files are properly linked together
 
-REQUIRED FILE PATHS (use exactly these paths with write_file):
-- ${relativeProjectPath}/index.html (main HTML file)
-- ${relativeProjectPath}/styles.css (CSS styles)
-- ${relativeProjectPath}/script.js (JavaScript logic)
+OUTPUT FORMAT - You MUST output code in this EXACT format:
 
-Project Context:
-- Name: ${project.name}
-- Description: ${project.description || 'No description'}`;
+\`\`\`html:index.html
+<!DOCTYPE html>
+<html>...your HTML code...</html>
+\`\`\`
+
+\`\`\`css:styles.css
+/* your CSS code */
+\`\`\`
+
+\`\`\`javascript:script.js
+// your JavaScript code
+\`\`\`
+
+CRITICAL: Always use the format \`\`\`language:filename with the colon and filename!`;
 
       let executionResult;
 
@@ -999,50 +1002,85 @@ async function buildFileTree(dirPath: string, basePath?: string): Promise<any> {
  */
 async function parseAndSaveCode(generatedText: string, projectPath: string): Promise<any[]> {
   const files: any[] = [];
+  console.log('🔍 parseAndSaveCode called');
+  console.log('   - Project path:', projectPath);
+  console.log('   - Text length:', generatedText.length);
+  console.log('   - Text preview:', generatedText.substring(0, 500));
 
-  // Regex to match code blocks with file paths
-  // Matches: ```html:index.html or ```javascript:script.js
-  const codeBlockRegex = /```(\w+):([^\n]+)\n([\s\S]*?)```/g;
+  // Pattern 1: ```html:index.html (explicit filename)
+  const explicitFileRegex = /```(\w+):([^\n]+)\n([\s\S]*?)```/g;
 
+  // Pattern 2: ```html (just language, infer filename)
+  const implicitFileRegex = /```(html|css|javascript|js)\n([\s\S]*?)```/g;
+
+  // First try explicit filenames
   let match;
-  while ((match = codeBlockRegex.exec(generatedText)) !== null) {
+  while ((match = explicitFileRegex.exec(generatedText)) !== null) {
     const [, language, filePath, content] = match;
     const cleanPath = filePath.trim();
     const fullPath = path.join(projectPath, cleanPath);
 
     try {
-      // Ensure directory exists
       await fs.mkdir(path.dirname(fullPath), { recursive: true });
-
-      // Write file
       await fs.writeFile(fullPath, content.trim(), 'utf-8');
-
       files.push({
         path: cleanPath,
         name: path.basename(cleanPath),
         type: language,
         size: Buffer.byteLength(content, 'utf-8')
       });
-
-      console.log(`✅ Created file: ${cleanPath}`);
+      console.log(`✅ Created file (explicit): ${cleanPath}`);
     } catch (error: any) {
       console.error(`❌ Failed to create file ${cleanPath}:`, error.message);
     }
   }
 
-  // If no code blocks found, try to detect common patterns
+  // If no explicit files, try implicit pattern
   if (files.length === 0) {
-    // Try to extract HTML, CSS, JS from the text
-    const htmlMatch = generatedText.match(/<!DOCTYPE html>[\s\S]*<\/html>/i);
-    const cssMatch = generatedText.match(/\/\*[\s\S]*?\*\/|[^{}]+\{[^{}]*\}/);
-    const jsMatch = generatedText.match(/function\s+\w+|const\s+\w+|let\s+\w+|var\s+\w+/);
+    console.log('   - No explicit files found, trying implicit pattern...');
+    const langToFile: Record<string, string> = {
+      'html': 'index.html',
+      'css': 'styles.css',
+      'javascript': 'script.js',
+      'js': 'script.js'
+    };
 
-    if (htmlMatch) {
-      const htmlPath = path.join(projectPath, 'index.html');
-      await fs.writeFile(htmlPath, htmlMatch[0], 'utf-8');
-      files.push({ path: 'index.html', name: 'index.html', type: 'html', size: htmlMatch[0].length });
+    while ((match = implicitFileRegex.exec(generatedText)) !== null) {
+      const [, language, content] = match;
+      const fileName = langToFile[language.toLowerCase()] || `file.${language}`;
+      const fullPath = path.join(projectPath, fileName);
+
+      try {
+        await fs.mkdir(path.dirname(fullPath), { recursive: true });
+        await fs.writeFile(fullPath, content.trim(), 'utf-8');
+        files.push({
+          path: fileName,
+          name: fileName,
+          type: language,
+          size: Buffer.byteLength(content, 'utf-8')
+        });
+        console.log(`✅ Created file (implicit): ${fileName}`);
+      } catch (error: any) {
+        console.error(`❌ Failed to create file ${fileName}:`, error.message);
+      }
     }
   }
 
+  // Last resort: extract raw HTML/CSS/JS
+  if (files.length === 0) {
+    console.log('   - No code blocks found, trying raw extraction...');
+
+    // Try to extract HTML
+    const htmlMatch = generatedText.match(/<!DOCTYPE html>[\s\S]*?<\/html>/i);
+    if (htmlMatch) {
+      const fullPath = path.join(projectPath, 'index.html');
+      await fs.mkdir(path.dirname(fullPath), { recursive: true });
+      await fs.writeFile(fullPath, htmlMatch[0], 'utf-8');
+      files.push({ path: 'index.html', name: 'index.html', type: 'html', size: htmlMatch[0].length });
+      console.log('✅ Created file (raw): index.html');
+    }
+  }
+
+  console.log(`📁 parseAndSaveCode: Created ${files.length} files`);
   return files;
 }
