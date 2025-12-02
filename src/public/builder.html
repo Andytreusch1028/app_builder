@@ -509,15 +509,9 @@
             <!-- Input Area (Bottom) -->
             <div style="background: var(--surface); border-top: 1px solid var(--border); padding: 16px;">
                 <textarea id="prompt_composer" class="input" placeholder="Describe what you want to build..." style="height:100px; font-size:14px; margin-bottom: 12px; resize: vertical;"></textarea>
-                <div class="row" style="gap: 12px;">
-                    <button id="build_app" class="btn btn-primary" onclick="sendBuildRequest()" style="flex: 1;">
-                        🚀 Build
-                    </button>
-                    <div id="app_mode" class="segmented" title="Agent behavior mode">
-                        <button type="button" id="app_mode_build" class="btn" onclick="setAppMode('Build')">Build</button>
-                        <button type="button" id="app_mode_ask" class="btn" onclick="setAppMode('Ask')">Ask</button>
-                    </div>
-                </div>
+                <button id="build_app" class="btn btn-primary" onclick="sendBuildRequest()" style="width: 100%;">
+                    🚀 Build
+                </button>
             </div>
         </section>
     </div>
@@ -988,11 +982,8 @@
             // Monaco editor is now lazy-loaded when Code tab is clicked
             initializeWebSocket();
             initializeColumnResize();
-            setAppMode('Build');
             // Set Build Log as default tab in middle panel
             switchMiddleTab('build-log');
-            // Update segmented control to show Build mode active
-            updateSegmentedControl();
             // Load provider metrics
             refreshProviderMetrics();
         });
@@ -1240,28 +1231,10 @@
         }
         function resetAgentSettings() { if (confirm('Reset to default agent persona?')) { agentPersona = DEFAULT_AGENT_PERSONA; localStorage.removeItem('agentPersona'); document.getElementById('agent-persona').value = DEFAULT_AGENT_PERSONA; addChatMessage('system', '🔄 Agent settings reset to default.'); } }
 
-        let chatMode = 'build'; // Default to build mode
         let conversationHistory = [];
         let qualityMode = false;
 
-        function toggleChatMode() {
-            chatMode = chatMode === 'chat' ? 'build' : 'chat';
-            const btn = document.getElementById('chat-mode-btn');
-            const indicator = document.getElementById('mode-indicator');
-            if (btn && indicator) {
-                if (chatMode === 'chat') { btn.textContent = '💬 Chat (Proactive)'; btn.classList.remove('btn-primary'); btn.classList.add('btn-secondary'); indicator.textContent = 'Chat mode: Ask questions & get suggestions'; }
-                else { btn.textContent = '🔨 Build (Execute)'; btn.classList.remove('btn-secondary'); btn.classList.add('btn-primary'); indicator.textContent = 'Build mode: Create files directly'; }
-            }
-            updateSegmentedControl();
-        }
-        function setAppMode(mode) { if (mode === 'Build' && chatMode !== 'build') toggleChatMode(); if (mode === 'Ask' && chatMode !== 'chat') toggleChatMode(); updateSegmentedControl(); }
-        function updateSegmentedControl() {
-            const buildBtn = document.getElementById('app_mode_build');
-            const askBtn = document.getElementById('app_mode_ask');
-            if (!buildBtn || !askBtn) return;
-            if (chatMode === 'build') { buildBtn.style.background = 'var(--primary)'; buildBtn.style.color = '#fff'; askBtn.style.background = 'var(--surface)'; askBtn.style.color = 'var(--text-primary)'; }
-            else { askBtn.style.background = 'var(--primary)'; askBtn.style.color = '#fff'; buildBtn.style.background = 'var(--surface)'; buildBtn.style.color = 'var(--text-primary)'; }
-        }
+        // Mode toggle functions removed - app now always builds
 
         function toggleQualityMode() {
             qualityMode = !qualityMode;
@@ -1292,33 +1265,11 @@
             addChatMessage('user', request);
             input.value = '';
 
-            // Execute based on mode
-            if (chatMode === 'chat') {
-                await sendChatMessage(request);
-            } else {
-                await sendBuildExecute(request);
-            }
+            // Always build (no mode toggle)
+            await sendBuildExecute(request);
         }
 
-        function sleep(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
-        function removeLastNMessages(n) {
-            const chatMessages = document.getElementById('chat-messages');
-            for (let i = 0; i < n; i++) { if (chatMessages.lastChild && !chatMessages.querySelector('p[style*="margin-top: 100px"]')) { chatMessages.removeChild(chatMessages.lastChild); } }
-        }
-
-        async function sendChatMessage(message) {
-            conversationHistory.push({ role: 'user', content: message });
-            addChatMessage('system', '📖 Understanding your request...'); await sleep(400);
-            addChatMessage('system', '🔍 Analyzing project context...'); await sleep(400);
-            addChatMessage('system', '💭 Preparing response...');
-            try {
-                const response = await fetch('/api/builder/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message, projectId: currentProject?.id, conversationHistory: conversationHistory.slice(-10), customPersona: agentPersona }) });
-                const result = await response.json();
-                removeLastNMessages(3);
-                if (result.success) { const aiMessage = result.data.message; addChatMessage('ai', aiMessage); conversationHistory.push({ role: 'assistant', content: aiMessage }); }
-                else { addChatMessage('ai', `❌ Error: ${result.error}`); }
-            } catch (error) { console.error('Error sending chat message:', error); removeLastNMessages(3); addChatMessage('ai', `❌ Error: ${error.message}`); }
-        }
+        // Chat message function removed - app now always builds
 
         async function sendBuildExecute(request) {
             resetQualityInsights(); // Reset insights at build start
