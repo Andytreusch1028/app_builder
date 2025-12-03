@@ -13,11 +13,14 @@ const __dirname = dirname(__filename);
 
 const srcPublic = join(__dirname, '..', 'src', 'public');
 const distPublic = join(__dirname, '..', 'dist', 'public');
+const srcData = join(__dirname, '..', 'src', 'data');
+const distData = join(__dirname, '..', 'dist', 'data');
 
-// Ensure dist/public directory exists
+// Ensure dist directories exist
 mkdirSync(distPublic, { recursive: true });
+mkdirSync(distData, { recursive: true });
 
-// Copy all files from src/public to dist/public
+// Copy all files from src to dest
 function copyDirectory(src, dest) {
   const entries = readdirSync(src);
 
@@ -39,4 +42,8 @@ function copyDirectory(src, dest) {
 console.log('📦 Copying public files to dist/public...\n');
 copyDirectory(srcPublic, distPublic);
 console.log('\n✅ Public files copied successfully!');
+
+console.log('\n📦 Copying data files to dist/data...\n');
+copyDirectory(srcData, distData);
+console.log('\n✅ Data files copied successfully!');
 
