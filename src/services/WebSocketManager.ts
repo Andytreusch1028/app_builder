@@ -165,12 +165,97 @@ export class WebSocketManager {
     });
     this.clients.clear();
     this.projectSubscriptions.clear();
-    
+
     if (this.wss) {
       this.wss.close();
     }
-    
+
     console.log('🔌 WebSocket server shutdown');
+  }
+
+  /**
+   * Send build progress update (compatibility method for builder routes)
+   */
+  sendBuildProgress(data: {
+    buildId: string;
+    status: string;
+    progress: number;
+    message: string;
+  }): void {
+    this.broadcast({
+      type: WebSocketMessageType.BUILD_PROGRESS,
+      data,
+      timestamp: new Date().toISOString()
+    });
+  }
+
+  /**
+   * Send build complete notification (compatibility method for builder routes)
+   */
+  sendBuildComplete(data: {
+    buildId: string;
+    success: boolean;
+    files: string[];
+    duration: number;
+  }): void {
+    this.broadcast({
+      type: WebSocketMessageType.BUILD_PROGRESS,
+      data: {
+        buildId: data.buildId,
+        status: 'completed',
+        progress: 100,
+        message: data.success ? `Build complete! Generated ${data.files?.length || 0} files` : 'Build failed',
+        success: data.success,
+        files: data.files,
+        duration: data.duration
+      },
+      timestamp: new Date().toISOString()
+    });
+  }
+
+  /**
+   * Send quality metric update (compatibility method for builder routes)
+   */
+  sendQualityMetric(data: {
+    buildId: string;
+    metric: string;
+    value: number;
+    label: string;
+  }): void {
+    this.broadcast({
+      type: WebSocketMessageType.QUALITY_METRIC,
+      data,
+      timestamp: new Date().toISOString()
+    });
+  }
+
+  /**
+   * Send build error notification (compatibility method for builder routes)
+   */
+  sendBuildError(data: {
+    buildId: string;
+    error: string;
+  }): void {
+    this.broadcast({
+      type: WebSocketMessageType.ERROR,
+      data,
+      timestamp: new Date().toISOString()
+    });
+  }
+
+  /**
+   * Send file change notification (compatibility method for builder routes)
+   */
+  sendFileChange(data: {
+    projectId: string;
+    filePath: string;
+    action: 'created' | 'modified' | 'deleted';
+  }): void {
+    this.broadcast({
+      type: WebSocketMessageType.FILE_CHANGE,
+      data,
+      timestamp: new Date().toISOString()
+    });
   }
 }
 

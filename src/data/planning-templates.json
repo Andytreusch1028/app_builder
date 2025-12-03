@@ -1,0 +1,141 @@
+{
+  "web-app": {
+    "name": "Web Application",
+    "description": "Full-stack web application with frontend and backend",
+    "sections": [
+      "Project Goal",
+      "Core Features",
+      "User Stories",
+      "Technical Requirements",
+      "Database Schema",
+      "API Endpoints",
+      "UI Components",
+      "Success Criteria",
+      "Task Breakdown"
+    ],
+    "techStack": ["React", "TypeScript", "Node.js", "Express", "PostgreSQL"],
+    "complexity": "moderate",
+    "estimatedHours": 40
+  },
+  "rest-api": {
+    "name": "REST API",
+    "description": "Backend API service with database",
+    "sections": [
+      "API Purpose",
+      "Endpoints",
+      "Data Models",
+      "Authentication",
+      "Validation Rules",
+      "Error Handling",
+      "Testing Strategy",
+      "Task Breakdown"
+    ],
+    "techStack": ["Node.js", "Express", "TypeScript", "PostgreSQL", "JWT"],
+    "complexity": "simple",
+    "estimatedHours": 20
+  },
+  "mobile-app": {
+    "name": "Mobile App",
+    "description": "Cross-platform mobile application",
+    "sections": [
+      "App Purpose",
+      "Key Features",
+      "Screen Flow",
+      "Data Models",
+      "API Integration",
+      "Offline Support",
+      "Push Notifications",
+      "Success Criteria",
+      "Task Breakdown"
+    ],
+    "techStack": ["React Native", "TypeScript", "Firebase", "AsyncStorage"],
+    "complexity": "complex",
+    "estimatedHours": 80
+  },
+  "chrome-extension": {
+    "name": "Chrome Extension",
+    "description": "Browser extension for Chrome/Edge",
+    "sections": [
+      "Extension Purpose",
+      "Features",
+      "Permissions Required",
+      "Content Scripts",
+      "Background Scripts",
+      "Popup UI",
+      "Storage Strategy",
+      "Task Breakdown"
+    ],
+    "techStack": ["JavaScript", "Chrome APIs", "HTML", "CSS"],
+    "complexity": "simple",
+    "estimatedHours": 15
+  },
+  "cli-tool": {
+    "name": "CLI Tool",
+    "description": "Command-line interface tool",
+    "sections": [
+      "Tool Purpose",
+      "Commands",
+      "Options & Flags",
+      "Configuration",
+      "Output Format",
+      "Error Handling",
+      "Testing Strategy",
+      "Task Breakdown"
+    ],
+    "techStack": ["Node.js", "TypeScript", "Commander.js", "Chalk"],
+    "complexity": "simple",
+    "estimatedHours": 12
+  },
+  "library": {
+    "name": "Library/Package",
+    "description": "Reusable library or npm package",
+    "sections": [
+      "Library Purpose",
+      "Public API",
+      "Core Features",
+      "Dependencies",
+      "Documentation",
+      "Testing Strategy",
+      "Publishing Plan",
+      "Task Breakdown"
+    ],
+    "techStack": ["TypeScript", "Jest", "Rollup", "TSDoc"],
+    "complexity": "moderate",
+    "estimatedHours": 30
+  },
+  "landing-page": {
+    "name": "Landing Page",
+    "description": "Marketing or product landing page",
+    "sections": [
+      "Page Purpose",
+      "Sections",
+      "Call to Action",
+      "Design Requirements",
+      "SEO Requirements",
+      "Analytics",
+      "Performance Goals",
+      "Task Breakdown"
+    ],
+    "techStack": ["HTML", "CSS", "JavaScript", "Tailwind CSS"],
+    "complexity": "simple",
+    "estimatedHours": 8
+  },
+  "dashboard": {
+    "name": "Admin Dashboard",
+    "description": "Data visualization and management dashboard",
+    "sections": [
+      "Dashboard Purpose",
+      "Key Metrics",
+      "Data Sources",
+      "Visualizations",
+      "User Roles",
+      "Filters & Search",
+      "Export Features",
+      "Task Breakdown"
+    ],
+    "techStack": ["React", "TypeScript", "Chart.js", "TanStack Table"],
+    "complexity": "moderate",
+    "estimatedHours": 35
+  }
+}
+

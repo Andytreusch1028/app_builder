@@ -5,14 +5,29 @@
 import { Router, Request, Response } from 'express';
 import * as fs from 'fs/promises';
 import * as path from 'path';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
 import { buildQwenPrompt } from '../config/qwen-prompts.js';
 import { ProviderOrchestrator } from '../services/ProviderOrchestrator.js';
 import { DeepAgentsService } from '../services/DeepAgentsService.js';
 import { FileSystemService } from '../services/FileSystemService.js';
 import { DeepAgentConfig } from '../types/deepagents.types.js';
-import { WebSocketService } from '../services/WebSocketService.js';
 import { PlannerService } from '../services/PlannerService.js';
 import { AgentExecutor } from '../services/AgentExecutor.js';
+import { ToolRegistry } from '../services/ToolRegistry.js';
+
+// ES module equivalent of __dirname
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+// WebSocket interface for real-time updates (compatible with both WebSocketService and WebSocketManager)
+interface IWebSocketService {
+  sendBuildProgress(data: { buildId: string; status: string; progress: number; message: string }): void;
+  sendBuildComplete(data: { buildId: string; success: boolean; files: string[]; duration: number }): void;
+  sendQualityMetric(data: { buildId: string; metric: string; value: number; label: string }): void;
+  sendBuildError(data: { buildId: string; error: string }): void;
+  sendFileChange(data: { projectId: string; filePath: string; action: 'created' | 'modified' | 'deleted' }): void;
+}
 
 export interface BuilderRouterConfig {
   workspaceRoot: string;
@@ -22,7 +37,7 @@ export interface BuilderRouterConfig {
   enableSelfImprovement?: boolean; // Enable Pack 11 Phase 2 self-improvement
   enableQwenOptimization?: boolean; // Enable Pack 11 Phase 2 Qwen optimization
   enableDeepAgents?: boolean; // Enable DeepAgentsJS harness
-  wsService?: WebSocketService; // Optional WebSocket service for real-time updates
+  wsService?: IWebSocketService; // Optional WebSocket service for real-time updates
   agentExecutor?: any; // Agent executor for build tasks
   toolRegistry?: any; // Tool registry for creating executor on-demand
 }
@@ -107,10 +122,14 @@ export function createBuilderRouter(config: BuilderRouterConfig): Router {
    * Create a new project
    */
   router.post('/projects/new', async (req: Request, res: Response) => {
+    console.log('\n📁 POST /api/builder/projects/new');
+    console.log('   - Request body:', req.body);
+
     try {
       const { name, description } = req.body;
 
       if (!name || typeof name !== 'string' || name.trim() === '') {
+        console.log('   ❌ Invalid project name');
         return res.status(400).json({
           success: false,
           error: 'Please provide a valid project name'
@@ -119,21 +138,29 @@ export function createBuilderRouter(config: BuilderRouterConfig): Router {
 
       // Generate project ID
       const projectId = `proj_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+      console.log('   - Project ID:', projectId);
+      console.log('   - Project name:', name);
 
       // Create project directory
       const projectPath = path.join(config.workspaceRoot, 'projects', name);
+      console.log('   - Project path:', projectPath);
 
       try {
+        console.log('   - Creating directories...');
         await fs.mkdir(projectPath, { recursive: true });
         await fs.mkdir(path.join(projectPath, 'src'), { recursive: true });
         await fs.mkdir(path.join(projectPath, 'tests'), { recursive: true });
+        console.log('   ✅ Directories created');
 
         // Create README
+        console.log('   - Creating README.md...');
         await fs.writeFile(
           path.join(projectPath, 'README.md'),
           `# ${name}\n\n${description || 'No description provided'}\n`
         );
+        console.log('   ✅ README.md created');
       } catch (error: any) {
+        console.error('   ❌ Failed to create project directory:', error);
         return res.status(500).json({
           success: false,
           error: `Failed to create project directory: ${error.message}`
@@ -473,10 +500,18 @@ Description: ${project.description || 'No description'}`;
    * Execute a build request with full agent integration
    */
   router.post('/build', async (req: Request, res: Response) => {
+    console.log('\n🎯 POST /api/builder/build received');
+    console.log('   - Body:', JSON.stringify(req.body, null, 2));
+
     try {
       const { prompt, projectId, useQuality } = req.body;
 
+      console.log('   - Prompt:', prompt?.substring(0, 100) + '...');
+      console.log('   - Project ID:', projectId);
+      console.log('   - Use Quality:', useQuality);
+
       if (!prompt || typeof prompt !== 'string' || prompt.trim() === '') {
+        console.log('   ❌ Invalid prompt');
         return res.status(400).json({
           success: false,
           error: 'Please provide a valid prompt'
@@ -484,6 +519,7 @@ Description: ${project.description || 'No description'}`;
       }
 
       if (!projectId) {
+        console.log('   ❌ Missing project ID');
         return res.status(400).json({
           success: false,
           error: 'Please provide a project ID'
@@ -492,11 +528,15 @@ Description: ${project.description || 'No description'}`;
 
       const project = projects.get(projectId);
       if (!project) {
+        console.log('   ❌ Project not found:', projectId);
+        console.log('   Available projects:', Array.from(projects.keys()));
         return res.status(404).json({
           success: false,
           error: 'Project not found'
         });
       }
+
+      console.log('   ✅ Project found:', project.name);
 
       const buildId = `build_${Date.now()}_${Math.random().toString(36).substring(7)}`;
       const startTime = Date.now();
@@ -556,6 +596,17 @@ CRITICAL: Always use the format \`\`\`language:filename with the colon and filen
           maxIterations: 2
         });
 
+        console.log('📝 LLM Response:');
+        console.log('   - Length:', result.text.length);
+        console.log('   - Quality Score:', result.qualityScore);
+        console.log('   - Iterations:', result.iterations);
+        console.log('   - Full response:', result.text);
+
+        // Save LLM response to debug file
+        const debugPath = path.join(project.path, 'llm-response-debug.txt');
+        await fs.writeFile(debugPath, result.text, 'utf-8');
+        console.log('   - Saved debug file:', debugPath);
+
         // Parse and save generated code to files
         const files = await parseAndSaveCode(result.text, project.path);
 
@@ -593,15 +644,62 @@ CRITICAL: Always use the format \`\`\`language:filename with the colon and filen
           }
           console.log('   - Available tools:', config.toolRegistry.listTools().map((t: any) => t.name).join(', '));
 
+          // Create project-specific tool registry with project-scoped file operations
+          const projectToolRegistry = new ToolRegistry();
+          const projectFileService = new FileSystemService({
+            workspaceRoot: project.path  // Use project path as workspace root
+          });
+
+          // Register project-scoped file tools
+          projectToolRegistry.register({
+            name: 'create_file',
+            description: 'Create a new file with content',
+            parameters: {
+              path: { type: 'string', required: true, description: 'Path to the file' },
+              content: { type: 'string', required: true, description: 'Content to write' }
+            },
+            execute: async (params: any) => {
+              await projectFileService.writeFile(params.path, params.content);
+              return { success: true, output: `File created: ${params.path}` };
+            }
+          });
+
+          projectToolRegistry.register({
+            name: 'write_file',
+            description: 'Write content to a file (creates or overwrites)',
+            parameters: {
+              path: { type: 'string', required: true, description: 'Path to the file' },
+              content: { type: 'string', required: true, description: 'Content to write' }
+            },
+            execute: async (params: any) => {
+              await projectFileService.writeFile(params.path, params.content);
+              return { success: true, output: `File written: ${params.path}` };
+            }
+          });
+
+          projectToolRegistry.register({
+            name: 'read_file',
+            description: 'Read content from a file',
+            parameters: {
+              path: { type: 'string', required: true, description: 'Path to the file' }
+            },
+            execute: async (params: any) => {
+              const content = await projectFileService.readFile(params.path);
+              return { success: true, output: content };
+            }
+          });
+
+          console.log('✅ Created project-specific tool registry with workspace root:', project.path);
+
           const planner = new PlannerService(
             config.llmProvider,
-            config.toolRegistry,
+            projectToolRegistry,  // Use project-specific tool registry
             undefined, // No orchestrator for on-demand executor
             config.planningProvider, // Use fast planning provider if available
             config.adaptiveProvider // Use adaptive provider for intelligent selection
           );
-          executor = new AgentExecutor(planner, config.toolRegistry, {
-            workspaceRoot: config.workspaceRoot
+          executor = new AgentExecutor(planner, projectToolRegistry, {  // Use project-specific tool registry
+            workspaceRoot: project.path  // Use project path as workspace root
           });
 
           console.log('✅ Executor created successfully');
@@ -629,7 +727,20 @@ CRITICAL: Always use the format \`\`\`language:filename with the colon and filen
         if (result.output) {
           console.log('\n📄 Agent output preview:');
           const outputStr = typeof result.output === 'string' ? result.output : JSON.stringify(result.output);
-        console.log(outputStr.substring(0, 500));
+          console.log(outputStr.substring(0, 500));
+
+          // Save agent output to debug file
+          const debugPath = path.join(project.path, 'agent-output-debug.txt');
+          await fs.writeFile(debugPath, outputStr, 'utf-8');
+          console.log('   - Saved debug file:', debugPath);
+
+          // If no artifacts, try parsing the output as code
+          if (!result.artifacts || result.artifacts.length === 0) {
+            console.log('   - No artifacts found, attempting to parse output as code...');
+            const parsedFiles = await parseAndSaveCode(outputStr, project.path);
+            console.log('   - Parsed files:', parsedFiles.length);
+            result.artifacts = parsedFiles;
+          }
         }
 
         executionResult = {
@@ -961,6 +1072,313 @@ Description: ${project.description || 'No description'}`;
     }
   });
 
+  // ============================================================
+  // PLANNING ROUTES (Pack 7.1)
+  // ============================================================
+
+  /**
+   * POST /api/builder/plan/generate
+   * Generate PRD from description using AI
+   */
+  router.post('/plan/generate', async (req: Request, res: Response) => {
+    console.log('🎯 POST /api/builder/plan/generate received');
+    console.log('📋 Request body:', JSON.stringify(req.body, null, 2));
+
+    try {
+      const { projectId, description, template } = req.body;
+
+      if (!projectId || !description) {
+        console.log('❌ Missing required fields');
+        return res.status(400).json({
+          success: false,
+          error: 'projectId and description are required'
+        });
+      }
+
+      const project = projects.get(projectId);
+      if (!project) {
+        return res.status(404).json({
+          success: false,
+          error: 'Project not found'
+        });
+      }
+
+      // Load template
+      const templatesPath = path.join(__dirname, '../data/planning-templates.json');
+      const templatesContent = await fs.readFile(templatesPath, 'utf-8');
+      const templates = JSON.parse(templatesContent);
+      const templateData = templates[template] || templates['web-app'];
+
+      console.log(`📝 Generating PRD for project: ${project.name}`);
+      console.log(`   Template: ${templateData.name}`);
+      console.log(`   Description: ${description.substring(0, 100)}...`);
+
+      // Generate PRD with AI
+      const prompt = `Generate a detailed Product Requirements Document (PRD) for this project:
+
+**Description:** ${description}
+
+**Template:** ${templateData.name}
+**Suggested Tech Stack:** ${templateData.techStack.join(', ')}
+
+Create a comprehensive PRD with these sections:
+${templateData.sections.map((s: string) => `- ${s}`).join('\n')}
+
+**Requirements:**
+- Format as clean Markdown
+- Be specific and actionable
+- Include 8-12 tasks in the Task Breakdown section
+- Each task should be under 2 hours of work
+- Tasks should be formatted as a checklist: - [ ] Task name
+- Include technical details where relevant
+- Define clear success criteria
+
+Only output the PRD in Markdown format, nothing else.`;
+
+      console.log('🤖 Calling LLM to generate PRD...');
+
+      // Use adaptive provider if available, otherwise fall back to llmProvider
+      const provider = config.adaptiveProvider || config.llmProvider;
+
+      if (!provider) {
+        throw new Error('No LLM provider configured');
+      }
+
+      const prd = await provider.generate(prompt, {
+        temperature: 0.7,
+        maxTokens: 2000
+      });
+
+      // Save PRD to project
+      const prdPath = path.join(project.path, 'PRD.md');
+      await fs.writeFile(prdPath, prd);
+
+      console.log(`✅ PRD generated and saved to ${prdPath}`);
+
+      return res.status(200).json({
+        success: true,
+        prd,
+        path: 'PRD.md'
+      });
+
+    } catch (error: any) {
+      console.error('❌ PRD generation error:', error);
+      return res.status(500).json({
+        success: false,
+        error: error.message || 'Internal server error'
+      });
+    }
+  });
+
+  /**
+   * POST /api/builder/plan/breakdown
+   * Break PRD into actionable tasks
+   */
+  router.post('/plan/breakdown', async (req: Request, res: Response) => {
+    try {
+      const { projectId, prd } = req.body;
+
+      if (!projectId || !prd) {
+        return res.status(400).json({
+          success: false,
+          error: 'projectId and prd are required'
+        });
+      }
+
+      const project = projects.get(projectId);
+      if (!project) {
+        return res.status(404).json({
+          success: false,
+          error: 'Project not found'
+        });
+      }
+
+      console.log(`🔨 Breaking down PRD into tasks for project: ${project.name}`);
+
+      const prompt = `Break this Product Requirements Document into specific, actionable tasks:
+
+${prd}
+
+**Requirements:**
+- Create 8-15 tasks total
+- Each task should be under 2 hours of work
+- Tasks should be ordered by dependency (what needs to be done first)
+- Tasks should be specific and measurable
+- Format as Markdown checklist: - [ ] Task name
+- Group related tasks together
+- Include setup, development, testing, and deployment tasks
+
+Only output the task list in Markdown checklist format, nothing else.`;
+
+      console.log('🤖 Calling LLM to break down tasks...');
+
+      // Use adaptive provider if available, otherwise fall back to llmProvider
+      const provider = config.adaptiveProvider || config.llmProvider;
+
+      if (!provider) {
+        throw new Error('No LLM provider configured');
+      }
+
+      const tasks = await provider.generate(prompt, {
+        temperature: 0.5,
+        maxTokens: 1000
+      });
+
+      console.log(`✅ Generated task breakdown`);
+
+      return res.status(200).json({
+        success: true,
+        tasks: tasks.trim()
+      });
+
+    } catch (error: any) {
+      console.error('❌ Task breakdown error:', error);
+      return res.status(500).json({
+        success: false,
+        error: error.message || 'Internal server error'
+      });
+    }
+  });
+
+  /**
+   * POST /api/builder/plan/estimate
+   * Estimate project complexity and effort
+   */
+  router.post('/plan/estimate', async (req: Request, res: Response) => {
+    try {
+      const { projectId, prd } = req.body;
+
+      if (!projectId || !prd) {
+        return res.status(400).json({
+          success: false,
+          error: 'projectId and prd are required'
+        });
+      }
+
+      const project = projects.get(projectId);
+      if (!project) {
+        return res.status(404).json({
+          success: false,
+          error: 'Project not found'
+        });
+      }
+
+      console.log(`📊 Estimating complexity for project: ${project.name}`);
+
+      const prompt = `Analyze this Product Requirements Document and estimate project complexity:
+
+${prd}
+
+Provide estimates in this exact JSON format (no markdown, no code blocks, just raw JSON):
+{
+  "complexity": "simple|moderate|complex",
+  "estimatedHours": <number>,
+  "teamSize": <number>,
+  "riskLevel": "low|medium|high",
+  "recommendations": ["recommendation 1", "recommendation 2", "recommendation 3"]
+}
+
+**Guidelines:**
+- simple: Basic CRUD, single page, minimal features (8-20 hours)
+- moderate: Multiple features, database, auth, API (20-60 hours)
+- complex: Advanced features, integrations, scalability (60+ hours)
+- teamSize: 1 for simple, 1-2 for moderate, 2+ for complex
+- riskLevel: Based on technical complexity and unknowns
+- recommendations: 3-5 specific suggestions for success
+
+Only output valid JSON, nothing else.`;
+
+      console.log('🤖 Calling LLM to estimate complexity...');
+
+      // Use adaptive provider if available, otherwise fall back to llmProvider
+      const provider = config.adaptiveProvider || config.llmProvider;
+
+      if (!provider) {
+        throw new Error('No LLM provider configured');
+      }
+
+      const response = await provider.generate(prompt, {
+        temperature: 0.3,
+        maxTokens: 500
+      });
+
+      // Parse JSON response (handle potential markdown wrapping)
+      let estimate;
+      try {
+        // Try to extract JSON from response
+        const jsonMatch = response.match(/\{[\s\S]*\}/);
+        if (!jsonMatch) {
+          throw new Error('No JSON found in response');
+        }
+        estimate = JSON.parse(jsonMatch[0]);
+      } catch (parseError) {
+        console.error('Failed to parse AI response:', response);
+        throw new Error('Failed to parse complexity estimate from AI');
+      }
+
+      // Validate required fields
+      if (!estimate.complexity || !estimate.estimatedHours || !estimate.teamSize || !estimate.riskLevel || !estimate.recommendations) {
+        throw new Error('Invalid estimate format from AI');
+      }
+
+      console.log(`✅ Complexity: ${estimate.complexity}, ${estimate.estimatedHours}h, Risk: ${estimate.riskLevel}`);
+
+      return res.status(200).json({
+        success: true,
+        ...estimate
+      });
+
+    } catch (error: any) {
+      console.error('❌ Complexity estimation error:', error);
+      return res.status(500).json({
+        success: false,
+        error: error.message || 'Internal server error'
+      });
+    }
+  });
+
+  /**
+   * POST /api/builder/plan/save
+   * Save PRD content to file
+   */
+  router.post('/plan/save', async (req: Request, res: Response) => {
+    try {
+      const { projectId, content } = req.body;
+
+      if (!projectId || !content) {
+        return res.status(400).json({
+          success: false,
+          error: 'projectId and content are required'
+        });
+      }
+
+      const project = projects.get(projectId);
+      if (!project) {
+        return res.status(404).json({
+          success: false,
+          error: 'Project not found'
+        });
+      }
+
+      const prdPath = path.join(project.path, 'PRD.md');
+      await fs.writeFile(prdPath, content);
+
+      console.log(`✅ PRD saved to ${prdPath}`);
+
+      return res.status(200).json({
+        success: true,
+        path: 'PRD.md'
+      });
+
+    } catch (error: any) {
+      console.error('❌ Save PRD error:', error);
+      return res.status(500).json({
+        success: false,
+        error: error.message || 'Internal server error'
+      });
+    }
+  });
+
   return router;
 }
 
@@ -968,32 +1386,45 @@ Description: ${project.description || 'No description'}`;
  * Build file tree recursively
  */
 async function buildFileTree(dirPath: string, basePath?: string): Promise<any> {
-  const items = await fs.readdir(dirPath, { withFileTypes: true });
-  const base = basePath || dirPath;
-
-  const tree = [];
-
-  for (const item of items) {
-    const itemPath = path.join(dirPath, item.name);
-
-    if (item.isDirectory()) {
-      tree.push({
-        name: item.name,
-        type: 'directory',
-        children: await buildFileTree(itemPath, base)
-      });
-    } else {
-      // Store relative path from project root
-      const relativePath = path.relative(base, itemPath);
-      tree.push({
-        name: item.name,
-        type: 'file',
-        path: relativePath
-      });
+  try {
+    // Check if directory exists first
+    try {
+      await fs.access(dirPath);
+    } catch {
+      console.log(`⚠️ Directory does not exist: ${dirPath}`);
+      return [];
     }
-  }
 
-  return tree;
+    const items = await fs.readdir(dirPath, { withFileTypes: true });
+    const base = basePath || dirPath;
+
+    const tree = [];
+
+    for (const item of items) {
+      const itemPath = path.join(dirPath, item.name);
+
+      if (item.isDirectory()) {
+        tree.push({
+          name: item.name,
+          type: 'directory',
+          children: await buildFileTree(itemPath, base)
+        });
+      } else {
+        // Store relative path from project root
+        const relativePath = path.relative(base, itemPath);
+        tree.push({
+          name: item.name,
+          type: 'file',
+          path: relativePath
+        });
+      }
+    }
+
+    return tree;
+  } catch (error: any) {
+    console.error(`❌ Error building file tree for ${dirPath}:`, error.message);
+    return [];
+  }
 }
 
 /**
@@ -1006,16 +1437,23 @@ async function parseAndSaveCode(generatedText: string, projectPath: string): Pro
   console.log('   - Project path:', projectPath);
   console.log('   - Text length:', generatedText.length);
   console.log('   - Text preview:', generatedText.substring(0, 500));
+  console.log('   - Full text:', generatedText); // DEBUG: Log full output
 
-  // Pattern 1: ```html:index.html (explicit filename)
-  const explicitFileRegex = /```(\w+):([^\n]+)\n([\s\S]*?)```/g;
+  // Pattern 1: ```html:index.html (explicit filename with colon)
+  const explicitColonRegex = /```(\w+):([^\n]+)\n([\s\S]*?)```/g;
 
-  // Pattern 2: ```html (just language, infer filename)
+  // Pattern 2: ```html index.html (explicit filename with space)
+  const explicitSpaceRegex = /```(\w+)\s+([^\n]+)\n([\s\S]*?)```/g;
+
+  // Pattern 3: File path comment before code block (e.g., // index.html followed by ```html)
+  const commentFileRegex = /(?:\/\/|#|<!--)\s*([^\n]+\.(?:html|css|js|jsx|ts|tsx))\s*(?:-->)?\s*\n```(\w+)\n([\s\S]*?)```/g;
+
+  // Pattern 4: ```html (just language, infer filename)
   const implicitFileRegex = /```(html|css|javascript|js)\n([\s\S]*?)```/g;
 
-  // First try explicit filenames
+  // Try Pattern 1: ```html:index.html
   let match;
-  while ((match = explicitFileRegex.exec(generatedText)) !== null) {
+  while ((match = explicitColonRegex.exec(generatedText)) !== null) {
     const [, language, filePath, content] = match;
     const cleanPath = filePath.trim();
     const fullPath = path.join(projectPath, cleanPath);
@@ -1029,13 +1467,61 @@ async function parseAndSaveCode(generatedText: string, projectPath: string): Pro
         type: language,
         size: Buffer.byteLength(content, 'utf-8')
       });
-      console.log(`✅ Created file (explicit): ${cleanPath}`);
+      console.log(`✅ Created file (colon format): ${cleanPath}`);
     } catch (error: any) {
       console.error(`❌ Failed to create file ${cleanPath}:`, error.message);
     }
   }
 
-  // If no explicit files, try implicit pattern
+  // Try Pattern 2: ```html index.html
+  if (files.length === 0) {
+    console.log('   - No colon format files found, trying space format...');
+    while ((match = explicitSpaceRegex.exec(generatedText)) !== null) {
+      const [, language, filePath, content] = match;
+      const cleanPath = filePath.trim();
+      const fullPath = path.join(projectPath, cleanPath);
+
+      try {
+        await fs.mkdir(path.dirname(fullPath), { recursive: true });
+        await fs.writeFile(fullPath, content.trim(), 'utf-8');
+        files.push({
+          path: cleanPath,
+          name: path.basename(cleanPath),
+          type: language,
+          size: Buffer.byteLength(content, 'utf-8')
+        });
+        console.log(`✅ Created file (space format): ${cleanPath}`);
+      } catch (error: any) {
+        console.error(`❌ Failed to create file ${cleanPath}:`, error.message);
+      }
+    }
+  }
+
+  // Try Pattern 3: Comment before code block
+  if (files.length === 0) {
+    console.log('   - No space format files found, trying comment format...');
+    while ((match = commentFileRegex.exec(generatedText)) !== null) {
+      const [, filePath, language, content] = match;
+      const cleanPath = filePath.trim();
+      const fullPath = path.join(projectPath, cleanPath);
+
+      try {
+        await fs.mkdir(path.dirname(fullPath), { recursive: true });
+        await fs.writeFile(fullPath, content.trim(), 'utf-8');
+        files.push({
+          path: cleanPath,
+          name: path.basename(cleanPath),
+          type: language,
+          size: Buffer.byteLength(content, 'utf-8')
+        });
+        console.log(`✅ Created file (comment format): ${cleanPath}`);
+      } catch (error: any) {
+        console.error(`❌ Failed to create file ${cleanPath}:`, error.message);
+      }
+    }
+  }
+
+  // Try Pattern 4: Implicit filenames
   if (files.length === 0) {
     console.log('   - No explicit files found, trying implicit pattern...');
     const langToFile: Record<string, string> = {

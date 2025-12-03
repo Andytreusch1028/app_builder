@@ -74,6 +74,11 @@ app.use(express.static(publicPath, {
 const projectsPath = path.join(__dirname, '..', 'projects');
 app.use('/projects', express.static(projectsPath));
 
+// Favicon route to prevent 404 errors
+app.get('/favicon.ico', (req, res) => {
+  res.status(204).end(); // No content
+});
+
 // Initialize services for agent routes
 const toolRegistry = new ToolRegistry();
 const fileService = new FileSystemService({
@@ -90,7 +95,7 @@ toolRegistry.register({
   },
   execute: async (params: any) => {
     await fileService.writeFile(params.path, params.content);
-    return { success: true, data: { path: params.path } };
+    return { success: true, output: `File created: ${params.path}` };
   }
 });
 
@@ -229,6 +234,7 @@ app.use('/api/builder', createBuilderRouter({
   enableSelfImprovement: true,
   enableQwenOptimization: true,
   enableDeepAgents: true,
+  wsService: webSocketManager, // Pass WebSocket manager for real-time updates
   toolRegistry: toolRegistry // Pass toolRegistry so executor can be created on-demand
 }));
 

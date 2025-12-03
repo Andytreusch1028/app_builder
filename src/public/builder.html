@@ -8,6 +8,9 @@
     <meta http-equiv="Expires" content="0">
     <title>Application Builder Dashboard</title>
 
+    <!-- Favicon (data URI to prevent 404 error) -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚀</text></svg>">
+
     <!-- Monaco Editor -->
     <link rel="stylesheet" data-name="vs/editor/editor.main" href="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.45.0/min/vs/editor/editor.main.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.45.0/min/vs/loader.min.js"></script>
@@ -78,6 +81,7 @@
             height: 100%;
             background: var(--surface);
             border-left: 1px solid var(--border);
+            overflow: hidden; /* Prevent overflow */
         }
         .chat-messages {
             flex: 1;
@@ -87,6 +91,13 @@
             flex-direction: column;
             gap: 12px;
             background: var(--bg-neutral-50);
+            min-height: 0; /* Allow flex shrinking */
+        }
+        .chat-input-area {
+            flex-shrink: 0; /* Never shrink */
+            background: var(--surface);
+            border-top: 1px solid var(--border);
+            padding: 16px;
         }
         .chat-message {
             padding: 12px;
@@ -443,6 +454,7 @@
                 <button class="tab active" data-tab="build-log" onclick="switchMiddleTab('build-log')">📋 Build Log</button>
                 <button class="tab" data-tab="preview" onclick="switchMiddleTab('preview')">👁️ Preview</button>
                 <button class="tab" data-tab="code" onclick="switchMiddleTab('code')">💻 Code</button>
+                <button class="tab" data-tab="planning" onclick="switchMiddleTab('planning')">📝 Planning</button>
             </div>
 
             <!-- Middle Panel Content -->
@@ -483,6 +495,71 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Planning Tab -->
+                <div class="middle-panel-tab" id="middle-tab-planning" style="flex: 1; display: none; flex-direction: column; background: var(--surface); overflow-y: auto; padding: 20px;">
+                    <!-- Template Selector -->
+                    <div style="margin-bottom: 20px;">
+                        <label style="display: block; margin-bottom: 8px; font-weight: 500; color: var(--text-primary);">Project Template</label>
+                        <select id="template-selector" class="input" style="width: 100%;">
+                            <option value="web-app">🌐 Web Application</option>
+                            <option value="rest-api">🔌 REST API</option>
+                            <option value="mobile-app">📱 Mobile App</option>
+                            <option value="chrome-extension">🧩 Chrome Extension</option>
+                            <option value="cli-tool">⌨️ CLI Tool</option>
+                            <option value="library">📦 Library/Package</option>
+                            <option value="landing-page">🎯 Landing Page</option>
+                            <option value="dashboard">📊 Admin Dashboard</option>
+                        </select>
+                    </div>
+
+                    <!-- Project Description -->
+                    <div style="margin-bottom: 20px;">
+                        <label style="display: block; margin-bottom: 8px; font-weight: 500; color: var(--text-primary);">Project Description</label>
+                        <textarea id="project-description" class="input" placeholder="Describe what you want to build in detail..."
+                                  style="height: 100px; resize: vertical; font-size: 14px;"></textarea>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div style="display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap;">
+                        <button class="btn btn-primary" onclick="generatePRD()" style="flex: 1; min-width: 150px;">
+                            ✨ Generate PRD
+                        </button>
+                        <button class="btn btn-secondary" onclick="loadExamplePRD()" style="flex: 1; min-width: 150px;">
+                            📄 Load Example
+                        </button>
+                    </div>
+
+                    <!-- PRD Editor -->
+                    <div style="flex: 1; display: flex; flex-direction: column; min-height: 400px; margin-bottom: 20px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+                            <label style="font-weight: 500; color: var(--text-primary);">Product Requirements Document</label>
+                            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                                <button class="btn btn-inline btn-secondary" onclick="breakdownTasks()" title="Break PRD into actionable tasks">
+                                    🔨 Break Into Tasks
+                                </button>
+                                <button class="btn btn-inline btn-secondary" onclick="estimateComplexity()" title="Estimate project complexity and time">
+                                    📊 Estimate Complexity
+                                </button>
+                                <button class="btn btn-inline btn-success" onclick="savePRD()" title="Save PRD to project folder">
+                                    💾 Save PRD
+                                </button>
+                            </div>
+                        </div>
+                        <div style="flex: 1; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; background: var(--bg-neutral-50);">
+                            <textarea id="prd-editor" class="input" placeholder="Your PRD will appear here after generation, or you can write your own..."
+                                      style="width: 100%; height: 100%; border: none; font-family: 'Monaco', 'Courier New', monospace; font-size: 13px; resize: none; background: transparent; min-height: 400px;"></textarea>
+                        </div>
+                    </div>
+
+                    <!-- Results Area -->
+                    <div id="planning-results" style="display: none; margin-top: 20px;">
+                        <h3 style="margin-bottom: 12px; color: var(--text-primary); font-size: 16px;">Analysis Results</h3>
+                        <div id="planning-results-content" style="background: var(--bg-neutral-50); padding: 16px; border-radius: 8px; border: 1px solid var(--border);">
+                            <!-- Results will be inserted here -->
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <!-- Legacy controls kept and hidden to preserve handlers -->
@@ -506,8 +583,8 @@
                 </div>
             </div>
 
-            <!-- Input Area (Bottom) -->
-            <div style="background: var(--surface); border-top: 1px solid var(--border); padding: 16px;">
+            <!-- Input Area (Bottom) - ALWAYS VISIBLE -->
+            <div class="chat-input-area">
                 <textarea id="prompt_composer" class="input" placeholder="Describe what you want to build..." style="height:100px; font-size:14px; margin-bottom: 12px; resize: vertical;"></textarea>
                 <button id="build_app" class="btn btn-primary" onclick="sendBuildRequest()" style="width: 100%;">
                     🚀 Build
@@ -654,6 +731,10 @@
             console.log('📨 WebSocket message:', message);
 
             switch (message.type) {
+                case 'ping':
+                    // Server ping to keep connection alive - no action needed
+                    console.log('💓 Server ping received');
+                    break;
                 case 'build_progress':
                     handleBuildProgress(message.data);
                     break;
@@ -1279,6 +1360,14 @@
                 return;
             }
 
+            // Check server health before building
+            const serverHealthy = await checkServerHealth();
+            if (!serverHealthy) {
+                addChatMessage('error', '❌ Server is not responding. Please check if the server is running.');
+                addChatMessage('system', '💡 Start the server with: node dist/index.js');
+                return;
+            }
+
             // Add user message and clear input
             addChatMessage('user', request);
             input.value = '';
@@ -1288,12 +1377,31 @@
             await sendBuildExecute(request);
         }
 
+        // Check if server is healthy
+        async function checkServerHealth() {
+            try {
+                const response = await fetch('/api/health', {
+                    method: 'GET',
+                    signal: AbortSignal.timeout(5000) // 5 second timeout
+                });
+                return response.ok;
+            } catch (error) {
+                console.error('Server health check failed:', error);
+                return false;
+            }
+        }
+
         // Chat message function removed - app now always builds
 
-        async function sendBuildExecute(request) {
+        async function sendBuildExecute(request, isRetry = false) {
             resetQualityInsights(); // Reset insights at build start
-            addChatMessage('system', qualityMode ? '✨ Starting build with quality improvement...' : '🤔 Starting build...');
-            addBuildLog('info', 'Build started');
+
+            const buildMsg = isRetry
+                ? '🔄 Retrying build with fixes...'
+                : (qualityMode ? '✨ Starting build with quality improvement...' : '🤔 Starting build...');
+
+            addChatMessage('system', buildMsg);
+            addBuildLog('info', isRetry ? 'Retrying build' : 'Build started');
 
             try {
                 const response = await fetch('/api/builder/build', {
@@ -1311,6 +1419,37 @@
                 if (result.success) {
                     const { duration, files, qualityScore, iterations, improved } = result.data;
 
+                    // VALIDATION: Check if build actually created files
+                    const buildValid = await validateBuildResult(files);
+
+                    if (!buildValid && !isRetry) {
+                        // Build reported success but no files created - auto-retry with fix
+                        addChatMessage('error', '⚠️ Build completed but no files were created. Retrying with enhanced instructions...');
+                        addBuildLog('warning', 'Build validation failed - retrying');
+
+                        // Reset metrics and retry
+                        resetQualityInsights();
+
+                        // Enhanced prompt with explicit file creation instructions
+                        const enhancedRequest = `${request}
+
+CRITICAL INSTRUCTIONS:
+1. You MUST create actual files using the write_file tool
+2. Create files in the project directory: projects/${currentProject?.name}/
+3. At minimum, create: index.html, styles.css, and script.js
+4. Use complete, working code - no placeholders or comments like "add code here"
+5. Each file must have actual implementation
+
+Example file paths:
+- projects/${currentProject?.name}/index.html
+- projects/${currentProject?.name}/styles.css
+- projects/${currentProject?.name}/script.js`;
+
+                        // Retry the build
+                        setTimeout(() => sendBuildExecute(enhancedRequest, true), 1000);
+                        return;
+                    }
+
                     // Success message
                     const durationSec = (duration / 1000).toFixed(1);
                     let successMsg = `✅ Build complete in ${durationSec}s! Generated ${files.length} files`;
@@ -1324,6 +1463,10 @@
                         successMsg += ` ✨ Improved through ${iterations} iterations`;
                     }
 
+                    if (isRetry) {
+                        successMsg += ' 🔄 (Fixed on retry)';
+                    }
+
                     addChatMessage('system', successMsg);
                     addBuildLog('success', successMsg);
 
@@ -1335,6 +1478,7 @@
                     switchWorkspaceTab('preview');
 
                 } else {
+                    // Build failed
                     addChatMessage('ai', `❌ Build failed: ${result.error}`);
                     addBuildLog('error', `Build failed: ${result.error}`);
                     qualityInsightsData.status = 'Error';
@@ -1347,6 +1491,47 @@
                 addBuildLog('error', `Error: ${error.message}`);
                 qualityInsightsData.status = 'Error';
                 renderQualityInsights();
+            }
+        }
+
+        // Validate that build actually created files
+        async function validateBuildResult(files) {
+            if (!files || files.length === 0) {
+                console.warn('⚠️ Build validation failed: No files in result');
+                return false;
+            }
+
+            // Check if files actually exist by trying to fetch file tree
+            try {
+                const response = await fetch(`/api/builder/projects/${currentProject.id}/files`);
+                const result = await response.json();
+
+                if (!result.success) {
+                    console.warn('⚠️ Build validation failed: Could not fetch file tree');
+                    return false;
+                }
+
+                const actualFiles = result.data || [];
+
+                // Filter out metadata files - handle both strings and objects
+                const codeFiles = actualFiles.filter(f => {
+                    const fileName = typeof f === 'string' ? f : (f.path || f.name || '');
+                    return fileName &&
+                           !fileName.endsWith('.project.json') &&
+                           !fileName.endsWith('README.md') &&
+                           !fileName.endsWith('agent-output-debug.txt');
+                });
+
+                if (codeFiles.length === 0) {
+                    console.warn('⚠️ Build validation failed: No code files created');
+                    return false;
+                }
+
+                console.log(`✅ Build validation passed: ${codeFiles.length} code files created`);
+                return true;
+            } catch (error) {
+                console.error('Build validation error:', error);
+                return false;
             }
         }
 
@@ -1580,6 +1765,390 @@
             if ((e.ctrlKey || e.metaKey) && (e.key.toLowerCase() === 's')) { e.preventDefault(); saveCurrentFile(); }
             if (e.key === 'Escape') { closeModeHelp(); }
         });
+
+        // ============================================================
+        // PLANNING FUNCTIONS (Pack 7.1)
+        // ============================================================
+
+        // Generate PRD with AI
+        async function generatePRD() {
+            const description = document.getElementById('project-description').value.trim();
+            const template = document.getElementById('template-selector').value;
+
+            if (!description) {
+                addChatMessage('system', '⚠️ Please enter a project description first');
+                return;
+            }
+
+            if (!currentProject) {
+                addChatMessage('system', '⚠️ Please create or open a project first');
+                return;
+            }
+
+            try {
+                // Show loading state
+                const prdEditor = document.getElementById('prd-editor');
+                prdEditor.value = '⏳ Generating PRD with AI...\n\nThis may take 10-30 seconds depending on your LLM provider...';
+                prdEditor.disabled = true;
+
+                addChatMessage('system', '🤖 Generating Product Requirements Document...');
+
+                const response = await fetch('/api/builder/plan/generate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        projectId: currentProject.id,
+                        description,
+                        template
+                    })
+                });
+
+                console.log('📡 Response status:', response.status);
+                console.log('📡 Response ok:', response.ok);
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('❌ Server error:', errorText);
+                    throw new Error(`Server error (${response.status}): ${errorText}`);
+                }
+
+                const result = await response.json();
+                console.log('📋 Result:', result);
+
+                if (result.success) {
+                    prdEditor.value = result.prd;
+                    addChatMessage('assistant', `✅ PRD generated and saved to \`${result.path}\`\n\nYou can now:\n- Edit the PRD directly\n- Break it into tasks\n- Estimate complexity\n- Save changes`);
+                    addBuildLog('success', `PRD generated: ${result.path}`);
+                } else {
+                    throw new Error(result.error || 'Failed to generate PRD');
+                }
+            } catch (error) {
+                console.error('PRD generation error:', error);
+                addChatMessage('system', `❌ Error: ${error.message}`);
+                addBuildLog('error', `PRD generation failed: ${error.message}`);
+                document.getElementById('prd-editor').value = '';
+            } finally {
+                document.getElementById('prd-editor').disabled = false;
+            }
+        }
+
+        // Break PRD into tasks
+        async function breakdownTasks() {
+            const prd = document.getElementById('prd-editor').value.trim();
+
+            if (!prd) {
+                addChatMessage('system', '⚠️ Please generate or write a PRD first');
+                return;
+            }
+
+            if (!currentProject) {
+                addChatMessage('system', '⚠️ Please create or open a project first');
+                return;
+            }
+
+            try {
+                addChatMessage('system', '🤖 Breaking down PRD into actionable tasks...');
+
+                const response = await fetch('/api/builder/plan/breakdown', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        projectId: currentProject.id,
+                        prd
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    // Show results
+                    const resultsDiv = document.getElementById('planning-results');
+                    const resultsContent = document.getElementById('planning-results-content');
+
+                    resultsContent.innerHTML = `
+                        <h4 style="margin-bottom: 12px; color: var(--text-primary);">📋 Task Breakdown</h4>
+                        <div style="background: var(--surface); padding: 12px; border-radius: 6px; border: 1px solid var(--border); font-family: 'Monaco', 'Courier New', monospace; font-size: 13px; white-space: pre-wrap; max-height: 400px; overflow-y: auto;">${result.tasks}</div>
+                        <div style="margin-top: 12px; padding: 12px; background: var(--bg-info); border-radius: 6px; font-size: 13px;">
+                            <strong>💡 Next Steps:</strong>
+                            <ul style="margin: 8px 0 0 20px;">
+                                <li>Review the tasks above</li>
+                                <li>Save the PRD (it includes these tasks)</li>
+                                <li>Use these tasks to guide your build prompts</li>
+                                <li>Task management UI coming in Pack 7.2!</li>
+                            </ul>
+                        </div>
+                    `;
+
+                    resultsDiv.style.display = 'block';
+
+                    // Scroll to results
+                    resultsDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+                    addChatMessage('assistant', `✅ Generated ${result.tasks.split('\n').filter(l => l.trim().startsWith('- [')).length} tasks from your PRD`);
+                    addBuildLog('success', 'Task breakdown complete');
+                } else {
+                    throw new Error(result.error || 'Failed to break down tasks');
+                }
+            } catch (error) {
+                console.error('Task breakdown error:', error);
+                addChatMessage('system', `❌ Error: ${error.message}`);
+                addBuildLog('error', `Task breakdown failed: ${error.message}`);
+            }
+        }
+
+        // Estimate complexity
+        async function estimateComplexity() {
+            const prd = document.getElementById('prd-editor').value.trim();
+
+            if (!prd) {
+                addChatMessage('system', '⚠️ Please generate or write a PRD first');
+                return;
+            }
+
+            if (!currentProject) {
+                addChatMessage('system', '⚠️ Please create or open a project first');
+                return;
+            }
+
+            try {
+                addChatMessage('system', '🤖 Analyzing project complexity...');
+
+                const response = await fetch('/api/builder/plan/estimate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        projectId: currentProject.id,
+                        prd
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    const resultsDiv = document.getElementById('planning-results');
+                    const resultsContent = document.getElementById('planning-results-content');
+
+                    // Complexity color coding
+                    const complexityColors = {
+                        'simple': 'var(--success)',
+                        'moderate': 'var(--warning)',
+                        'complex': 'var(--danger)'
+                    };
+
+                    const riskColors = {
+                        'low': 'var(--success)',
+                        'medium': 'var(--warning)',
+                        'high': 'var(--danger)'
+                    };
+
+                    resultsContent.innerHTML = `
+                        <h4 style="margin-bottom: 16px; color: var(--text-primary);">📊 Complexity Analysis</h4>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 16px;">
+                            <div style="background: var(--surface); padding: 12px; border-radius: 6px; border: 1px solid var(--border); text-align: center;">
+                                <div style="font-size: 11px; text-transform: uppercase; color: var(--text-secondary); margin-bottom: 4px;">Complexity</div>
+                                <div style="font-size: 20px; font-weight: 600; color: ${complexityColors[result.complexity] || 'var(--text-primary)'};">${result.complexity}</div>
+                            </div>
+                            <div style="background: var(--surface); padding: 12px; border-radius: 6px; border: 1px solid var(--border); text-align: center;">
+                                <div style="font-size: 11px; text-transform: uppercase; color: var(--text-secondary); margin-bottom: 4px;">Estimated Time</div>
+                                <div style="font-size: 20px; font-weight: 600; color: var(--text-primary);">${result.estimatedHours}h</div>
+                            </div>
+                            <div style="background: var(--surface); padding: 12px; border-radius: 6px; border: 1px solid var(--border); text-align: center;">
+                                <div style="font-size: 11px; text-transform: uppercase; color: var(--text-secondary); margin-bottom: 4px;">Team Size</div>
+                                <div style="font-size: 20px; font-weight: 600; color: var(--text-primary);">${result.teamSize}</div>
+                            </div>
+                            <div style="background: var(--surface); padding: 12px; border-radius: 6px; border: 1px solid var(--border); text-align: center;">
+                                <div style="font-size: 11px; text-transform: uppercase; color: var(--text-secondary); margin-bottom: 4px;">Risk Level</div>
+                                <div style="font-size: 20px; font-weight: 600; color: ${riskColors[result.riskLevel] || 'var(--text-primary)'};">${result.riskLevel}</div>
+                            </div>
+                        </div>
+                        <div style="background: var(--surface); padding: 12px; border-radius: 6px; border: 1px solid var(--border);">
+                            <strong style="color: var(--text-primary);">💡 Recommendations:</strong>
+                            <ul style="margin: 8px 0 0 20px; color: var(--text-secondary);">
+                                ${result.recommendations.map(r => `<li>${r}</li>`).join('')}
+                            </ul>
+                        </div>
+                    `;
+
+                    resultsDiv.style.display = 'block';
+
+                    // Scroll to results
+                    resultsDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+                    addChatMessage('assistant', `📊 Complexity: **${result.complexity}** | Est. Time: **${result.estimatedHours} hours** | Risk: **${result.riskLevel}**`);
+                    addBuildLog('success', `Complexity: ${result.complexity}, ${result.estimatedHours}h`);
+                } else {
+                    throw new Error(result.error || 'Failed to estimate complexity');
+                }
+            } catch (error) {
+                console.error('Complexity estimation error:', error);
+                addChatMessage('system', `❌ Error: ${error.message}`);
+                addBuildLog('error', `Complexity estimation failed: ${error.message}`);
+            }
+        }
+
+        // Save PRD to file
+        async function savePRD() {
+            const prd = document.getElementById('prd-editor').value.trim();
+
+            if (!prd) {
+                addChatMessage('system', '⚠️ Nothing to save');
+                return;
+            }
+
+            if (!currentProject) {
+                addChatMessage('system', '⚠️ Please create or open a project first');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/builder/plan/save', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        projectId: currentProject.id,
+                        content: prd
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    addChatMessage('assistant', `✅ PRD saved to \`${result.path}\``);
+                    addBuildLog('success', `PRD saved: ${result.path}`);
+
+                    // Refresh file tree to show PRD.md
+                    if (currentProject) {
+                        loadProjectFiles(currentProject.id);
+                    }
+                } else {
+                    throw new Error(result.error || 'Failed to save PRD');
+                }
+            } catch (error) {
+                console.error('Save PRD error:', error);
+                addChatMessage('system', `❌ Error: ${error.message}`);
+                addBuildLog('error', `Save PRD failed: ${error.message}`);
+            }
+        }
+
+        // Load example PRD
+        function loadExamplePRD() {
+            const template = document.getElementById('template-selector').value;
+
+            const examples = {
+                'web-app': `# Project: Task Management Web App
+
+## Goal
+Build a simple, beautiful task management application for individuals and small teams.
+
+## Core Features
+1. Create, edit, and delete tasks
+2. Organize tasks into projects
+3. Mark tasks as complete
+4. Filter and search tasks
+5. User authentication
+
+## Technical Requirements
+- Frontend: React with TypeScript
+- Backend: Node.js + Express
+- Database: PostgreSQL
+- Authentication: JWT
+- Styling: Tailwind CSS
+
+## Success Criteria
+- Users can manage tasks efficiently
+- App loads in under 2 seconds
+- Mobile responsive
+- 90%+ test coverage
+
+## Task Breakdown
+- [ ] Set up project structure
+- [ ] Create database schema
+- [ ] Build authentication system
+- [ ] Create task CRUD API
+- [ ] Build React components
+- [ ] Add styling with Tailwind
+- [ ] Write unit and integration tests
+- [ ] Deploy to production`,
+
+                'rest-api': `# Project: User Management REST API
+
+## Goal
+Create a secure, scalable REST API for user management.
+
+## Endpoints
+- POST /api/users - Create user
+- GET /api/users/:id - Get user
+- PUT /api/users/:id - Update user
+- DELETE /api/users/:id - Delete user
+- POST /api/auth/login - Login
+- POST /api/auth/logout - Logout
+
+## Technical Requirements
+- Node.js + Express + TypeScript
+- PostgreSQL database
+- JWT authentication
+- Input validation (Zod)
+- Rate limiting
+- API documentation (Swagger)
+
+## Success Criteria
+- All endpoints return proper status codes
+- 100% test coverage
+- Response time under 100ms
+- Proper error handling
+
+## Task Breakdown
+- [ ] Set up Express server with TypeScript
+- [ ] Create database models
+- [ ] Implement JWT authentication
+- [ ] Build CRUD endpoints
+- [ ] Add input validation
+- [ ] Implement rate limiting
+- [ ] Write comprehensive tests
+- [ ] Generate API documentation`,
+
+                'landing-page': `# Project: Product Landing Page
+
+## Goal
+Create a high-converting landing page for a SaaS product.
+
+## Sections
+1. Hero with CTA
+2. Features showcase
+3. Pricing table
+4. Testimonials
+5. FAQ
+6. Footer with links
+
+## Technical Requirements
+- HTML5 + CSS3
+- Tailwind CSS for styling
+- Vanilla JavaScript for interactions
+- Mobile-first responsive design
+- SEO optimized
+
+## Success Criteria
+- Lighthouse score 90+
+- Mobile responsive
+- Fast load time (<2s)
+- Clear call-to-action
+
+## Task Breakdown
+- [ ] Create HTML structure
+- [ ] Style with Tailwind CSS
+- [ ] Add smooth scroll navigation
+- [ ] Implement pricing toggle
+- [ ] Add form validation
+- [ ] Optimize images
+- [ ] Test on multiple devices
+- [ ] Deploy to Netlify`
+            };
+
+            const example = examples[template] || examples['web-app'];
+            document.getElementById('prd-editor').value = example;
+            addChatMessage('system', `📄 Loaded example PRD for ${template}`);
+            addBuildLog('info', 'Example PRD loaded');
+        }
     </script>
 
     <!-- Mode Help Modal (preserved) -->
