@@ -451,53 +451,16 @@
         <main class="composer-wrap" id="composer" style="padding: 0; display: flex; flex-direction: column;">
             <!-- Tabs for Middle Panel -->
             <div class="tabs" style="border-bottom: 1px solid var(--border);">
-                <button class="tab active" data-tab="build-log" onclick="switchMiddleTab('build-log')">📋 Build Log</button>
-                <button class="tab" data-tab="preview" onclick="switchMiddleTab('preview')">👁️ Preview</button>
+                <button class="tab active" data-tab="planning" onclick="switchMiddleTab('planning')">📝 Planning</button>
+                <button class="tab" data-tab="build-log" onclick="switchMiddleTab('build-log')">📋 Build Log</button>
                 <button class="tab" data-tab="code" onclick="switchMiddleTab('code')">💻 Code</button>
-                <button class="tab" data-tab="planning" onclick="switchMiddleTab('planning')">📝 Planning</button>
+                <button class="tab" data-tab="preview" onclick="switchMiddleTab('preview')">👁️ Preview</button>
             </div>
 
             <!-- Middle Panel Content -->
             <div style="flex: 1; display: flex; flex-direction: column; overflow: hidden; position: relative;">
-                <!-- Build Log Tab -->
-                <div class="middle-panel-tab active" id="middle-tab-build-log" style="flex: 1; display: flex; flex-direction: column; background: var(--surface);">
-                    <div id="build-log" class="log-body" style="margin: 0; border: none; border-radius: 0; flex: 1;">
-                        <p style="color: var(--text-secondary);">Ready to build. Describe what you want in the chat panel →</p>
-                    </div>
-                </div>
-
-                <!-- Preview Tab -->
-                <div class="middle-panel-tab" id="middle-tab-preview" style="flex: 1; display: none; flex-direction: column; background: var(--surface);">
-                    <div class="panel" id="live_preview" style="height: 100%; margin: 0; border: none; border-radius: 0;">
-                        <div class="panel-header">
-                            <div class="panel-title">Live Preview</div>
-                            <div class="row">
-                                <button class="btn btn-secondary btn-inline" onclick="refreshPreview()">🔄 Refresh</button>
-                                <button class="btn btn-secondary btn-inline" onclick="openPreviewInNewTab()">🔗 Open</button>
-                            </div>
-                        </div>
-                        <div class="panel-body">
-                            <iframe id="preview-iframe" class="panel-body-inner"></iframe>
-                            <div id="preview-placeholder" class="panel-placeholder">No preview available</div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Code Tab -->
-                <div class="middle-panel-tab" id="middle-tab-code" style="flex: 1; display: none; flex-direction: column; background: var(--surface);">
-                    <div class="panel" id="code_editor" style="height: 100%; margin: 0; border: none; border-radius: 0;">
-                        <div class="panel-header">
-                            <div class="panel-title">Code Editor</div>
-                            <button class="btn btn-success btn-inline" onclick="saveCurrentFile()">💾 Save</button>
-                        </div>
-                        <div id="code-editor" class="panel-body">
-                            <div class="panel-placeholder" style="padding:12px;">No file selected</div>
-                        </div>
-                    </div>
-                </div>
-
                 <!-- Planning Tab -->
-                <div class="middle-panel-tab" id="middle-tab-planning" style="flex: 1; display: none; flex-direction: column; background: var(--surface); overflow-y: auto; padding: 20px;">
+                <div class="middle-panel-tab active" id="middle-tab-planning" style="flex: 1; display: flex; flex-direction: column; background: var(--surface); overflow-y: auto; padding: 20px;">
                     <!-- Planning Header -->
                     <div style="margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--border);">
                         <h3 style="margin: 0; color: var(--text-primary); font-size: 16px; font-weight: 600;">📝 Project Plan</h3>
@@ -519,6 +482,44 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Build Log Tab -->
+                <div class="middle-panel-tab" id="middle-tab-build-log" style="flex: 1; display: none; flex-direction: column; background: var(--surface);">
+                    <div id="build-log" class="log-body" style="margin: 0; border: none; border-radius: 0; flex: 1;">
+                        <p style="color: var(--text-secondary);">Ready to build. Describe what you want in the chat panel →</p>
+                    </div>
+                </div>
+
+                <!-- Code Tab -->
+                <div class="middle-panel-tab" id="middle-tab-code" style="flex: 1; display: none; flex-direction: column; background: var(--surface);">
+                    <div class="panel" id="code_editor" style="height: 100%; margin: 0; border: none; border-radius: 0;">
+                        <div class="panel-header">
+                            <div class="panel-title">Code Editor</div>
+                            <button class="btn btn-success btn-inline" onclick="saveCurrentFile()">💾 Save</button>
+                        </div>
+                        <div id="code-editor" class="panel-body">
+                            <div class="panel-placeholder" style="padding:12px;">No file selected</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Preview Tab -->
+                <div class="middle-panel-tab" id="middle-tab-preview" style="flex: 1; display: none; flex-direction: column; background: var(--surface);">
+                    <div class="panel" id="live_preview" style="height: 100%; margin: 0; border: none; border-radius: 0;">
+                        <div class="panel-header">
+                            <div class="panel-title">Live Preview</div>
+                            <div class="row">
+                                <button class="btn btn-secondary btn-inline" onclick="refreshPreview()">🔄 Refresh</button>
+                                <button class="btn btn-secondary btn-inline" onclick="openPreviewInNewTab()">🔗 Open</button>
+                            </div>
+                        </div>
+                        <div class="panel-body">
+                            <iframe id="preview-iframe" class="panel-body-inner"></iframe>
+                            <div id="preview-placeholder" class="panel-placeholder">No preview available</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
             </div>
 
             <!-- Legacy controls kept and hidden to preserve handlers -->
@@ -1038,8 +1039,8 @@
             // Monaco editor is now lazy-loaded when Code tab is clicked
             initializeWebSocket();
             initializeColumnResize();
-            // Set Build Log as default tab in middle panel
-            switchMiddleTab('build-log');
+            // Set Planning as default tab in middle panel
+            switchMiddleTab('planning');
             // Load provider metrics
             refreshProviderMetrics();
         });
