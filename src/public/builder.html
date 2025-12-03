@@ -498,65 +498,24 @@
 
                 <!-- Planning Tab -->
                 <div class="middle-panel-tab" id="middle-tab-planning" style="flex: 1; display: none; flex-direction: column; background: var(--surface); overflow-y: auto; padding: 20px;">
-                    <!-- Template Selector -->
-                    <div style="margin-bottom: 20px;">
-                        <label style="display: block; margin-bottom: 8px; font-weight: 500; color: var(--text-primary);">Project Template</label>
-                        <select id="template-selector" class="input" style="width: 100%;">
-                            <option value="web-app">🌐 Web Application</option>
-                            <option value="rest-api">🔌 REST API</option>
-                            <option value="mobile-app">📱 Mobile App</option>
-                            <option value="chrome-extension">🧩 Chrome Extension</option>
-                            <option value="cli-tool">⌨️ CLI Tool</option>
-                            <option value="library">📦 Library/Package</option>
-                            <option value="landing-page">🎯 Landing Page</option>
-                            <option value="dashboard">📊 Admin Dashboard</option>
-                        </select>
+                    <!-- Planning Header -->
+                    <div style="margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--border);">
+                        <h3 style="margin: 0; color: var(--text-primary); font-size: 16px; font-weight: 600;">📝 Project Plan</h3>
+                        <p style="margin: 8px 0 0 0; color: var(--text-secondary); font-size: 13px;">
+                            Auto-generated from your build request. To modify, use the chat on the right and click ➡️
+                        </p>
                     </div>
 
-                    <!-- Project Description -->
-                    <div style="margin-bottom: 20px;">
-                        <label style="display: block; margin-bottom: 8px; font-weight: 500; color: var(--text-primary);">Project Description</label>
-                        <textarea id="project-description" class="input" placeholder="Describe what you want to build in detail..."
-                                  style="height: 100px; resize: vertical; font-size: 14px;"></textarea>
-                    </div>
-
-                    <!-- Action Buttons -->
-                    <div style="display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap;">
-                        <button class="btn btn-primary" onclick="generatePRD()" style="flex: 1; min-width: 150px;">
-                            ✨ Generate PRD
-                        </button>
-                        <button class="btn btn-secondary" onclick="loadExamplePRD()" style="flex: 1; min-width: 150px;">
-                            📄 Load Example
-                        </button>
-                    </div>
-
-                    <!-- PRD Editor -->
-                    <div style="flex: 1; display: flex; flex-direction: column; min-height: 400px; margin-bottom: 20px;">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
-                            <label style="font-weight: 500; color: var(--text-primary);">Product Requirements Document</label>
-                            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                                <button class="btn btn-inline btn-secondary" onclick="breakdownTasks()" title="Break PRD into actionable tasks">
-                                    🔨 Break Into Tasks
-                                </button>
-                                <button class="btn btn-inline btn-secondary" onclick="estimateComplexity()" title="Estimate project complexity and time">
-                                    📊 Estimate Complexity
-                                </button>
-                                <button class="btn btn-inline btn-success" onclick="savePRD()" title="Save PRD to project folder">
-                                    💾 Save PRD
-                                </button>
+                    <!-- Planning Content (READ-ONLY) -->
+                    <div style="flex: 1; display: flex; flex-direction: column; min-height: 400px;">
+                        <div id="planning-content" style="flex: 1; background: var(--bg-neutral-50); padding: 20px; border-radius: 8px; border: 1px solid var(--border); font-family: 'Monaco', 'Courier New', monospace; font-size: 13px; line-height: 1.6; white-space: pre-wrap; overflow-y: auto; color: var(--text-primary);">
+                            <div style="text-align: center; color: var(--text-secondary); padding: 40px 20px;">
+                                <div style="font-size: 48px; margin-bottom: 16px;">📝</div>
+                                <div style="font-size: 14px; font-family: system-ui, -apple-system, sans-serif;">
+                                    No plan generated yet.<br><br>
+                                    Enter your build request in the chat on the right and click ➡️ to get started.
+                                </div>
                             </div>
-                        </div>
-                        <div style="flex: 1; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; background: var(--bg-neutral-50);">
-                            <textarea id="prd-editor" class="input" placeholder="Your PRD will appear here after generation, or you can write your own..."
-                                      style="width: 100%; height: 100%; border: none; font-family: 'Monaco', 'Courier New', monospace; font-size: 13px; resize: none; background: transparent; min-height: 400px;"></textarea>
-                        </div>
-                    </div>
-
-                    <!-- Results Area -->
-                    <div id="planning-results" style="display: none; margin-top: 20px;">
-                        <h3 style="margin-bottom: 12px; color: var(--text-primary); font-size: 16px;">Analysis Results</h3>
-                        <div id="planning-results-content" style="background: var(--bg-neutral-50); padding: 16px; border-radius: 8px; border: 1px solid var(--border);">
-                            <!-- Results will be inserted here -->
                         </div>
                     </div>
                 </div>
@@ -586,8 +545,8 @@
             <!-- Input Area (Bottom) - ALWAYS VISIBLE -->
             <div class="chat-input-area">
                 <textarea id="prompt_composer" class="input" placeholder="Describe what you want to build..." style="height:100px; font-size:14px; margin-bottom: 12px; resize: vertical;"></textarea>
-                <button id="build_app" class="btn btn-primary" onclick="sendBuildRequest()" style="width: 100%;">
-                    🚀 Build
+                <button id="build_app" class="btn btn-primary" onclick="sendBuildRequest()" style="width: 100%; font-size: 20px; padding: 12px;">
+                    ➡️
                 </button>
             </div>
         </section>
@@ -1372,6 +1331,25 @@
             addChatMessage('user', request);
             input.value = '';
 
+            // Check if planning.md exists - if not, generate it first
+            const planningExists = await checkPlanningExists();
+
+            if (!planningExists) {
+                // First request - generate planning.md
+                addChatMessage('system', '📝 Generating project plan...');
+                addBuildLog('info', 'Generating planning.md');
+
+                const planGenerated = await generatePlanningMd(request);
+
+                if (!planGenerated) {
+                    addChatMessage('error', '❌ Failed to generate planning.md');
+                    return;
+                }
+
+                addChatMessage('system', '✅ Plan generated! Starting build...');
+                addBuildLog('success', 'planning.md created');
+            }
+
             // Always build (no mode toggle)
             console.log('🔨 Calling sendBuildExecute...'); // Debug log
             await sendBuildExecute(request);
@@ -1388,6 +1366,63 @@
             } catch (error) {
                 console.error('Server health check failed:', error);
                 return false;
+            }
+        }
+
+        // Check if planning.md exists in current project
+        async function checkPlanningExists() {
+            if (!currentProject) return false;
+
+            try {
+                const response = await fetch(`/api/builder/projects/${currentProject.id}/files`);
+                const result = await response.json();
+
+                if (result.success && result.files) {
+                    return result.files.some(file => file.name === 'planning.md');
+                }
+                return false;
+            } catch (error) {
+                console.error('Error checking planning.md:', error);
+                return false;
+            }
+        }
+
+        // Generate planning.md from user request
+        async function generatePlanningMd(request) {
+            try {
+                const response = await fetch('/api/builder/planning/generate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        description: request,
+                        projectId: currentProject?.id
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success && result.planning) {
+                    // Update the planning tab with the generated content
+                    updatePlanningDisplay(result.planning);
+
+                    // Switch to planning tab to show the user
+                    switchMiddleTab('planning');
+
+                    return true;
+                }
+                return false;
+            } catch (error) {
+                console.error('Error generating planning.md:', error);
+                return false;
+            }
+        }
+
+        // Update the planning display
+        function updatePlanningDisplay(planningContent) {
+            const planningDiv = document.getElementById('planning-content');
+            if (planningDiv) {
+                planningDiv.textContent = planningContent;
+                planningDiv.style.textAlign = 'left';
             }
         }
 

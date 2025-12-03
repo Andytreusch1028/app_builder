@@ -277,9 +277,25 @@ export function createBuilderRouter(config: BuilderRouterConfig): Router {
       // Read directory structure
       const fileTree = await buildFileTree(project.path);
 
+      // Also create a flat list of files for easy checking
+      const flattenFiles = (tree: any[]): any[] => {
+        const files: any[] = [];
+        for (const item of tree) {
+          if (item.type === 'file') {
+            files.push(item);
+          } else if (item.type === 'directory' && item.children) {
+            files.push(...flattenFiles(item.children));
+          }
+        }
+        return files;
+      };
+
+      const files = flattenFiles(fileTree);
+
       return res.status(200).json({
         success: true,
-        data: fileTree
+        data: fileTree,
+        files: files  // Flat list for easy checking
       });
 
     } catch (error: any) {
@@ -1075,6 +1091,103 @@ Description: ${project.description || 'No description'}`;
   // ============================================================
   // PLANNING ROUTES (Pack 7.1)
   // ============================================================
+
+  /**
+   * POST /api/builder/planning/generate
+   * Generate planning.md from build request (auto-generated on first build)
+   */
+  router.post('/planning/generate', async (req: Request, res: Response) => {
+    console.log('📝 POST /api/builder/planning/generate received');
+    console.log('📋 Request body:', JSON.stringify(req.body, null, 2));
+
+    try {
+      const { projectId, description } = req.body;
+
+      if (!projectId || !description) {
+        console.log('❌ Missing required fields');
+        return res.status(400).json({
+          success: false,
+          error: 'projectId and description are required'
+        });
+      }
+
+      const project = projects.get(projectId);
+      if (!project) {
+        return res.status(404).json({
+          success: false,
+          error: 'Project not found'
+        });
+      }
+
+      console.log(`📝 Generating planning.md for project: ${project.name}`);
+      console.log(`   Description: ${description.substring(0, 100)}...`);
+
+      // Generate planning.md with AI
+      const prompt = `Generate a concise project plan for this build request:
+
+**Build Request:** ${description}
+
+Create a planning document with these sections:
+
+## 📋 Project Overview
+Brief summary of what will be built (2-3 sentences)
+
+## 🎯 Core Features
+List 3-5 main features to implement
+
+## 🏗️ Technical Approach
+- Tech stack to use
+- Key files to create
+- Architecture overview
+
+## ✅ Implementation Steps
+Numbered list of 5-8 steps to build this
+
+## 📦 Deliverables
+What files/components will be created
+
+**Requirements:**
+- Format as clean Markdown
+- Be specific and actionable
+- Keep it concise (under 500 words)
+- Focus on what will be built, not how to use it
+
+Only output the planning document in Markdown format, nothing else.`;
+
+      console.log('🤖 Calling LLM to generate planning.md...');
+
+      // Use adaptive provider if available, otherwise fall back to llmProvider
+      const provider = config.adaptiveProvider || config.llmProvider;
+
+      if (!provider) {
+        throw new Error('No LLM provider configured');
+      }
+
+      const planning = await provider.generate(prompt, {
+        temperature: 0.7,
+        maxTokens: 1500
+      });
+
+      // Save planning.md to project
+      const planningPath = path.join(project.path, 'planning.md');
+      await fs.writeFile(planningPath, planning);
+
+      console.log(`✅ planning.md generated and saved to ${planningPath}`);
+
+      return res.status(200).json({
+        success: true,
+        planning,
+        path: 'planning.md'
+      });
+
+    } catch (error: any) {
+      console.error('❌ planning.md generation error:', error);
+      return res.status(500).json({
+        success: false,
+        error: error.message || 'Internal server error'
+      });
+    }
+  });
 
   /**
    * POST /api/builder/plan/generate
