@@ -240,8 +240,21 @@
             <p class="header-subtitle">Build applications through natural language conversation</p>
         </div>
         <div class="header-actions">
-            <button class="btn btn-secondary" onclick="openTechnologySettings()">🔧 Technologies</button>
-            <button class="btn btn-secondary" onclick="openAgentSettings()" id="agent_settings" title="Agent Settings">⚙️ Agent Settings</button>
+            <div style="position: relative;">
+                <button class="btn btn-secondary" onclick="toggleOptionsMenu()" id="options-menu-btn" title="Options">⚙️ Options</button>
+                <div id="options-menu" style="display: none; position: absolute; top: 100%; right: 0; margin-top: 8px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); min-width: 200px; z-index: 1000;">
+                    <div style="padding: 8px 0;">
+                        <button onclick="openAgentSettings(); closeOptionsMenu();" style="width: 100%; text-align: left; padding: 12px 16px; background: none; border: none; color: var(--text-primary); cursor: pointer; font-size: 14px; display: flex; align-items: center; gap: 8px;" onmouseover="this.style.background='var(--bg-neutral-50)'" onmouseout="this.style.background='none'">
+                            <span>🤖</span>
+                            <span>Agent Settings</span>
+                        </button>
+                        <button onclick="openTechnologySettings(); closeOptionsMenu();" style="width: 100%; text-align: left; padding: 12px 16px; background: none; border: none; color: var(--text-primary); cursor: pointer; font-size: 14px; display: flex; align-items: center; gap: 8px;" onmouseover="this.style.background='var(--bg-neutral-50)'" onmouseout="this.style.background='none'">
+                            <span>🔧</span>
+                            <span>Technologies</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -1151,22 +1164,51 @@
                         projectDiv.style.cursor = 'pointer';
                         projectDiv.style.fontSize = '13px';
                         projectDiv.style.transition = 'all 0.2s';
-                        projectDiv.innerHTML = `
+                        projectDiv.style.display = 'flex';
+                        projectDiv.style.justifyContent = 'space-between';
+                        projectDiv.style.alignItems = 'center';
+
+                        const contentDiv = document.createElement('div');
+                        contentDiv.style.flex = '1';
+                        contentDiv.innerHTML = `
                             <div style="font-weight: 500; color: var(--text-primary);">${project.name}</div>
                             <div style="font-size: 11px; color: var(--text-secondary); margin-top: 2px;">${new Date(project.createdAt).toLocaleDateString()}</div>`;
-                        projectDiv.onclick = () => selectProject(project);
+                        contentDiv.onclick = () => selectProject(project);
+
+                        const deleteBtn = document.createElement('button');
+                        deleteBtn.innerHTML = '🗑️';
+                        deleteBtn.title = 'Delete project';
+                        deleteBtn.style.cssText = 'background: none; border: none; color: var(--text-secondary); cursor: pointer; padding: 4px 8px; font-size: 16px; opacity: 0.6; transition: opacity 0.2s;';
+                        deleteBtn.onclick = (e) => {
+                            e.stopPropagation();
+                            deleteProject(project.id, project.name);
+                        };
+                        deleteBtn.onmouseenter = () => {
+                            deleteBtn.style.opacity = '1';
+                            deleteBtn.style.color = 'var(--error)';
+                        };
+                        deleteBtn.onmouseleave = () => {
+                            deleteBtn.style.opacity = '0.6';
+                            deleteBtn.style.color = 'var(--text-secondary)';
+                        };
+
+                        projectDiv.appendChild(contentDiv);
+                        projectDiv.appendChild(deleteBtn);
+
                         projectDiv.onmouseenter = () => {
                             projectDiv.style.background = 'var(--primary)';
                             projectDiv.style.color = 'white';
-                            projectDiv.querySelector('div:first-child').style.color = 'white';
-                            projectDiv.querySelector('div:last-child').style.color = 'rgba(255,255,255,0.8)';
+                            const textDivs = contentDiv.querySelectorAll('div');
+                            textDivs[0].style.color = 'white';
+                            textDivs[1].style.color = 'rgba(255,255,255,0.8)';
                         };
                         projectDiv.onmouseleave = () => {
                             if (!currentProject || currentProject.id !== project.id) {
                                 projectDiv.style.background = 'var(--surface)';
                                 projectDiv.style.color = 'var(--text-primary)';
-                                projectDiv.querySelector('div:first-child').style.color = 'var(--text-primary)';
-                                projectDiv.querySelector('div:last-child').style.color = 'var(--text-secondary)';
+                                const textDivs = contentDiv.querySelectorAll('div');
+                                textDivs[0].style.color = 'var(--text-primary)';
+                                textDivs[1].style.color = 'var(--text-secondary)';
                             }
                         };
                         projectList.appendChild(projectDiv);
@@ -1186,6 +1228,67 @@
             currentProject = project;
             addChatMessage('system', `📂 Opened project: ${project.name}`);
             updateFileTree();
+        }
+
+        async function deleteProject(projectId, projectName) {
+            if (!confirm(`Are you sure you want to delete "${projectName}"?\n\nThis will permanently delete all files in this project.`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/builder/projects/${projectId}`, {
+                    method: 'DELETE'
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    addChatMessage('system', `✅ Project "${projectName}" deleted`);
+
+                    // If the deleted project was the current project, clear it
+                    if (currentProject && currentProject.id === projectId) {
+                        currentProject = null;
+                        resetUI();
+                    }
+
+                    // Refresh project list
+                    loadProjects();
+                } else {
+                    addChatMessage('error', `❌ Failed to delete project: ${result.error}`);
+                }
+            } catch (error) {
+                console.error('Error deleting project:', error);
+                addChatMessage('error', `❌ Error deleting project: ${error.message}`);
+            }
+        }
+
+        // Options menu functions
+        function toggleOptionsMenu() {
+            const menu = document.getElementById('options-menu');
+            if (menu.style.display === 'none') {
+                menu.style.display = 'block';
+                // Close menu when clicking outside
+                setTimeout(() => {
+                    document.addEventListener('click', closeOptionsMenuOnClickOutside);
+                }, 0);
+            } else {
+                menu.style.display = 'none';
+                document.removeEventListener('click', closeOptionsMenuOnClickOutside);
+            }
+        }
+
+        function closeOptionsMenu() {
+            const menu = document.getElementById('options-menu');
+            menu.style.display = 'none';
+            document.removeEventListener('click', closeOptionsMenuOnClickOutside);
+        }
+
+        function closeOptionsMenuOnClickOutside(event) {
+            const menu = document.getElementById('options-menu');
+            const btn = document.getElementById('options-menu-btn');
+            if (!menu.contains(event.target) && !btn.contains(event.target)) {
+                closeOptionsMenu();
+            }
         }
 
         function addChatMessage(type, content) {

@@ -258,6 +258,55 @@ export function createBuilderRouter(config: BuilderRouterConfig): Router {
   });
 
   /**
+   * DELETE /api/builder/projects/:id
+   * Delete a project
+   */
+  router.delete('/projects/:id', async (req: Request, res: Response) => {
+    console.log('\n🗑️ DELETE /api/builder/projects/:id');
+
+    try {
+      const { id } = req.params;
+
+      const project = projects.get(id);
+
+      if (!project) {
+        return res.status(404).json({
+          success: false,
+          error: 'Project not found'
+        });
+      }
+
+      console.log(`   - Deleting project: ${project.name} (${id})`);
+
+      // Remove project directory
+      try {
+        await fs.rm(project.path, { recursive: true, force: true });
+        console.log(`   ✅ Project directory deleted: ${project.path}`);
+      } catch (error: any) {
+        console.error(`   ⚠️ Error deleting directory: ${error.message}`);
+        // Continue even if directory deletion fails
+      }
+
+      // Remove from projects map
+      projects.delete(id);
+
+      console.log(`   ✅ Project removed from memory`);
+
+      return res.status(200).json({
+        success: true,
+        message: `Project "${project.name}" deleted successfully`
+      });
+
+    } catch (error: any) {
+      console.error('   ❌ Error deleting project:', error);
+      return res.status(500).json({
+        success: false,
+        error: error.message || 'Internal server error'
+      });
+    }
+  });
+
+  /**
    * GET /api/builder/projects/:id/files
    * Get file tree for a project
    */
