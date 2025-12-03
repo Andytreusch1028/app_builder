@@ -1,1 +1,0 @@
-[{"step":"step_1","description":"Create HTML file","output":"File created: index.html"},{"step":"step_2","description":"Create CSS file","output":"File created: styles.css"}]
