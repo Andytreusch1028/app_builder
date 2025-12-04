@@ -1574,10 +1574,21 @@ async function buildFileTree(dirPath: string, basePath?: string): Promise<any> {
       } else {
         // Store relative path from project root
         const relativePath = path.relative(base, itemPath);
+
+        // Get file stats for size
+        let fileSize = 0;
+        try {
+          const stats = await fs.stat(itemPath);
+          fileSize = stats.size;
+        } catch (error) {
+          console.warn(`Could not get size for ${itemPath}`);
+        }
+
         tree.push({
           name: item.name,
           type: 'file',
-          path: relativePath
+          path: relativePath,
+          size: fileSize
         });
       }
     }

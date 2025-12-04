@@ -843,6 +843,8 @@
         }
 
         function renderQualityInsights() {
+            console.log('🎨 Rendering Quality Insights:', qualityInsightsData);
+
             // Helper to safely update element
             const setElement = (id, value, styleProp, styleValue) => {
                 const el = document.getElementById(id);
@@ -951,6 +953,8 @@
         }
 
         function completeQualityInsights(files, execution) {
+            console.log('📊 Completing Quality Insights:', { files, execution });
+
             qualityInsightsData.status = 'Complete';
             qualityInsightsData.buildTime = Date.now() - qualityInsightsData.startTime;
             qualityInsightsData.fileCount = files.length;
@@ -962,6 +966,7 @@
                 qualityInsightsData.iterations = execution.iterations || execution.result?.iterations || 1;
             }
 
+            console.log('📊 Quality Insights Data:', qualityInsightsData);
             renderQualityInsights();
         }
 
@@ -1607,6 +1612,13 @@ Example file paths:
 
                     addChatMessage('system', successMsg);
                     addBuildLog('success', successMsg);
+
+                    // Update quality insights with build results
+                    completeQualityInsights(files, {
+                        qualityScore: qualityScore,
+                        iterations: iterations || 1,
+                        duration: duration
+                    });
 
                     // Update file tree and preview
                     await updateFileTree();
