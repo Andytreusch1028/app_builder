@@ -773,13 +773,15 @@
             }
 
             // Show detailed file activity in chat
-            const fileName = data.path.split('/').pop();
-            if (data.action === 'created') {
-                addChatMessage('ai', `✨ Created ${fileName}`);
-            } else if (data.action === 'modified') {
-                addChatMessage('ai', `📝 Updated ${fileName}`);
-            } else if (data.action === 'deleted') {
-                addChatMessage('ai', `🗑️ Removed ${fileName}`);
+            if (data.path) {
+                const fileName = data.path.split('/').pop();
+                if (data.action === 'created') {
+                    addChatMessage('ai', `✨ Created ${fileName}`);
+                } else if (data.action === 'modified') {
+                    addChatMessage('ai', `📝 Updated ${fileName}`);
+                } else if (data.action === 'deleted') {
+                    addChatMessage('ai', `🗑️ Removed ${fileName}`);
+                }
             }
         }
 
@@ -914,6 +916,7 @@
             const techs = new Set();
 
             files.forEach(file => {
+                if (!file.path) return; // Skip if path is undefined
                 const ext = file.path.split('.').pop().toLowerCase();
                 const fileName = file.path.toLowerCase();
 
@@ -1829,6 +1832,7 @@ Example file paths:
         }
 
         function getFileIcon(filename) {
+            if (!filename) return '📄';
             const ext = filename.split('.').pop().toLowerCase();
             const icons = { js: '📜', ts: '📘', json: '📋', html: '🌐', css: '🎨', md: '📝', txt: '📄', py: '🐍', java: '☕', cpp: '⚙️', c: '⚙️', go: '🔵', rs: '🦀', sh: '🔧', yml: '⚙️', yaml: '⚙️', xml: '📰', svg: '🖼️', png: '🖼️', jpg: '🖼️', gif: '🖼️' };
             return icons[ext] || '📄';
@@ -2051,7 +2055,8 @@ Example file paths:
                     // Scroll to results
                     resultsDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 
-                    addChatMessage('assistant', `✅ Generated ${result.tasks.split('\n').filter(l => l.trim().startsWith('- [')).length} tasks from your PRD`);
+                    const taskCount = result.tasks ? result.tasks.split('\n').filter(l => l.trim().startsWith('- [')).length : 0;
+                    addChatMessage('assistant', `✅ Generated ${taskCount} tasks from your PRD`);
                     addBuildLog('success', 'Task breakdown complete');
                 } else {
                     throw new Error(result.error || 'Failed to break down tasks');
