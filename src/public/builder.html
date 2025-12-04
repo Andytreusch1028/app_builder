@@ -1450,7 +1450,8 @@
                 const planGenerated = await generatePlanningMd(request);
 
                 if (!planGenerated) {
-                    addChatMessage('error', '❌ Failed to generate planning.md');
+                    addChatMessage('error', '❌ Failed to generate planning.md. Check console for details.');
+                    addBuildLog('error', 'Failed to generate planning.md');
                     return;
                 }
 
@@ -1498,16 +1499,28 @@
         // Generate planning.md from user request
         async function generatePlanningMd(request) {
             try {
+                console.log('📝 Generating planning.md for request:', request.substring(0, 100));
+                console.log('📝 Current project:', currentProject);
+
+                if (!currentProject || !currentProject.id) {
+                    console.error('❌ No current project selected');
+                    addChatMessage('error', '❌ Please select or create a project first');
+                    return false;
+                }
+
                 const response = await fetch('/api/builder/planning/generate', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         description: request,
-                        projectId: currentProject?.id
+                        projectId: currentProject.id
                     })
                 });
 
+                console.log('📝 Planning API response status:', response.status);
+
                 const result = await response.json();
+                console.log('📝 Planning API result:', result);
 
                 if (result.success && result.planning) {
                     // Update the planning tab with the generated content
@@ -1517,10 +1530,14 @@
                     switchMiddleTab('planning');
 
                     return true;
+                } else {
+                    console.error('❌ Planning generation failed:', result.error);
+                    addChatMessage('error', `❌ Failed to generate plan: ${result.error || 'Unknown error'}`);
+                    return false;
                 }
-                return false;
             } catch (error) {
-                console.error('Error generating planning.md:', error);
+                console.error('❌ Error generating planning.md:', error);
+                addChatMessage('error', `❌ Error generating plan: ${error.message}`);
                 return false;
             }
         }
