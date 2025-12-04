@@ -168,35 +168,55 @@ CRITICAL RULES:
 4. Return ONLY the JSON object below, nothing else
 5. Dependencies MUST be step IDs (like "step_1"), NOT file names
 6. If a step needs a file created by another step, reference that step's ID in dependencies
+7. **CRITICAL**: The "content" parameter MUST contain COMPLETE, WORKING code - NOT placeholders or examples!
+8. **CRITICAL**: Generate FULL, PRODUCTION-READY code that implements ALL requested features
+9. For HTML: Include complete DOCTYPE, head, body, all elements, and proper structure
+10. For CSS: Include complete styling for ALL elements (not just "body { margin: 0; }")
+11. For JavaScript: Include ALL functions, event handlers, and complete logic
+12. Example: For a calculator, include ALL buttons (0-9, +, -, ×, ÷, =, CE), display, and working calculation logic
 
 REQUIRED JSON FORMAT (copy this structure exactly):
 {
   "steps": [
     {
       "id": "step_1",
-      "description": "Create HTML file",
+      "description": "Create complete HTML file with full UI structure",
       "tool": "create_file",
       "parameters": {
         "path": "index.html",
-        "content": "<!DOCTYPE html>..."
+        "content": "FULL HTML CODE HERE - NOT <!DOCTYPE html>... - ACTUAL COMPLETE CODE"
       },
       "dependencies": []
     },
     {
       "id": "step_2",
-      "description": "Create CSS file",
+      "description": "Create complete CSS file with full styling",
       "tool": "create_file",
       "parameters": {
         "path": "styles.css",
-        "content": "body { margin: 0; }"
+        "content": "FULL CSS CODE HERE - NOT body { margin: 0; } - ACTUAL COMPLETE STYLES"
       },
       "dependencies": ["step_1"]
+    },
+    {
+      "id": "step_3",
+      "description": "Create complete JavaScript file with full functionality",
+      "tool": "create_file",
+      "parameters": {
+        "path": "script.js",
+        "content": "FULL JAVASCRIPT CODE HERE - COMPLETE IMPLEMENTATION WITH ALL FUNCTIONS"
+      },
+      "dependencies": ["step_2"]
     }
   ],
   "estimatedTime": 5
 }
 
-IMPORTANT: dependencies array contains step IDs, not file names!
+IMPORTANT:
+- dependencies array contains step IDs, not file names!
+- The "content" field MUST contain COMPLETE, WORKING code - NO placeholders like "..." or "// code here"
+- Use \\n for newlines in JSON strings
+- Escape quotes with \\"
 START YOUR RESPONSE WITH { AND END WITH }. NO OTHER TEXT.`;
   }
 
