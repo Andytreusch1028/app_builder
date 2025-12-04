@@ -174,8 +174,12 @@ CRITICAL RULES:
 10. For CSS: Include complete styling for ALL elements (not just "body { margin: 0; }")
 11. For JavaScript: Include ALL functions, event handlers, and complete logic
 12. Example: For a calculator, include ALL buttons (0-9, +, -, ×, ÷, =, CE), display, and working calculation logic
+13. **WEB RESEARCH**: You can use web_search and web_fetch tools to research documentation, examples, or best practices BEFORE creating files
+14. **RESEARCH FIRST**: If you need to learn about a technology, framework, or pattern, add research steps BEFORE code generation steps
 
 REQUIRED JSON FORMAT (copy this structure exactly):
+
+EXAMPLE 1 - Simple build (no research needed):
 {
   "steps": [
     {
@@ -210,6 +214,52 @@ REQUIRED JSON FORMAT (copy this structure exactly):
     }
   ],
   "estimatedTime": 5
+}
+
+EXAMPLE 2 - Build with research (when you need to learn about a technology):
+{
+  "steps": [
+    {
+      "id": "step_1",
+      "description": "Research React hooks best practices",
+      "tool": "web_search",
+      "parameters": {
+        "query": "React hooks useState useEffect tutorial",
+        "maxResults": 3
+      },
+      "dependencies": []
+    },
+    {
+      "id": "step_2",
+      "description": "Fetch React documentation for hooks",
+      "tool": "web_fetch",
+      "parameters": {
+        "url": "https://react.dev/reference/react/hooks"
+      },
+      "dependencies": ["step_1"]
+    },
+    {
+      "id": "step_3",
+      "description": "Create HTML file with React app structure",
+      "tool": "create_file",
+      "parameters": {
+        "path": "index.html",
+        "content": "FULL HTML CODE WITH REACT CDN AND ROOT DIV"
+      },
+      "dependencies": ["step_2"]
+    },
+    {
+      "id": "step_4",
+      "description": "Create React component with hooks",
+      "tool": "create_file",
+      "parameters": {
+        "path": "app.js",
+        "content": "FULL REACT CODE USING HOOKS LEARNED FROM RESEARCH"
+      },
+      "dependencies": ["step_3"]
+    }
+  ],
+  "estimatedTime": 8
 }
 
 IMPORTANT:

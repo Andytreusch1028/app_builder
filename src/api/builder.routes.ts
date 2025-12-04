@@ -15,6 +15,7 @@ import { DeepAgentConfig } from '../types/deepagents.types.js';
 import { PlannerService } from '../services/PlannerService.js';
 import { AgentExecutor } from '../services/AgentExecutor.js';
 import { ToolRegistry } from '../services/ToolRegistry.js';
+import { WebResearchService } from '../services/WebResearchService.js';
 
 // ES module equivalent of __dirname
 const __filename = fileURLToPath(import.meta.url);
@@ -754,7 +755,54 @@ CRITICAL: Always use the format \`\`\`language:filename with the colon and filen
             }
           });
 
+          // Create web research service instance
+          const webResearchService = new WebResearchService();
+
+          // Register web research tools
+          projectToolRegistry.register({
+            name: 'web_search',
+            description: 'Search the web for information. Use this to research documentation, examples, best practices, or any information needed for building the application.',
+            parameters: {
+              query: { type: 'string', required: true, description: 'Search query (e.g., "React hooks tutorial", "CSS grid layout examples")' },
+              maxResults: { type: 'number', required: false, description: 'Maximum number of results to return (default: 5)' }
+            },
+            execute: async (params: any) => {
+              const results = await webResearchService.search(params.query, params.maxResults || 5);
+              const output = results.map((r, i) =>
+                `${i + 1}. ${r.title}\n   URL: ${r.url}\n   ${r.snippet}`
+              ).join('\n\n');
+              return {
+                success: true,
+                output: output || 'No results found',
+                data: results
+              };
+            }
+          });
+
+          projectToolRegistry.register({
+            name: 'web_fetch',
+            description: 'Fetch content from a specific URL. Use this to read documentation, tutorials, or code examples from the web.',
+            parameters: {
+              url: { type: 'string', required: true, description: 'URL to fetch content from' }
+            },
+            execute: async (params: any) => {
+              const result = await webResearchService.fetch(params.url);
+              if (!result.success) {
+                return {
+                  success: false,
+                  output: `Failed to fetch ${params.url}: ${result.error}`
+                };
+              }
+              return {
+                success: true,
+                output: `Title: ${result.title || 'N/A'}\n\nContent:\n${result.content.substring(0, 5000)}${result.content.length > 5000 ? '...' : ''}`,
+                data: result
+              };
+            }
+          });
+
           console.log('✅ Created project-specific tool registry with workspace root:', project.path);
+          console.log('✅ Registered web research tools: web_search, web_fetch');
 
           const planner = new PlannerService(
             config.llmProvider,
