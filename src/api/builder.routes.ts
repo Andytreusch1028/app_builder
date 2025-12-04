@@ -1205,17 +1205,30 @@ Only output the planning document in Markdown format, nothing else.`;
 
       console.log('🤖 Calling LLM to generate planning.md...');
 
-      // Use adaptive provider if available, otherwise fall back to llmProvider
-      const provider = config.adaptiveProvider || config.llmProvider;
+      let planning: string;
 
-      if (!provider) {
+      // Use adaptive provider if available for intelligent selection
+      if (config.adaptiveProvider) {
+        console.log('🎯 Using adaptive provider for planning generation...');
+        const response = await config.adaptiveProvider.generateWithAdaptiveSelection(
+          prompt,
+          'planning',
+          {
+            temperature: 0.7,
+            maxTokens: 1500
+          }
+        );
+        planning = response.text;
+      } else if (config.llmProvider) {
+        console.log('🔧 Using standard LLM provider for planning generation...');
+        const response = await config.llmProvider.generateText(prompt, {
+          temperature: 0.7,
+          maxTokens: 1500
+        });
+        planning = response.text;
+      } else {
         throw new Error('No LLM provider configured');
       }
-
-      const planning = await provider.generate(prompt, {
-        temperature: 0.7,
-        maxTokens: 1500
-      });
 
       // Save planning.md to project
       const planningPath = path.join(project.path, 'planning.md');
@@ -1299,17 +1312,30 @@ Only output the PRD in Markdown format, nothing else.`;
 
       console.log('🤖 Calling LLM to generate PRD...');
 
-      // Use adaptive provider if available, otherwise fall back to llmProvider
-      const provider = config.adaptiveProvider || config.llmProvider;
+      let prd: string;
 
-      if (!provider) {
+      // Use adaptive provider if available for intelligent selection
+      if (config.adaptiveProvider) {
+        console.log('🎯 Using adaptive provider for PRD generation...');
+        const response = await config.adaptiveProvider.generateWithAdaptiveSelection(
+          prompt,
+          'planning',
+          {
+            temperature: 0.7,
+            maxTokens: 2000
+          }
+        );
+        prd = response.text;
+      } else if (config.llmProvider) {
+        console.log('🔧 Using standard LLM provider for PRD generation...');
+        const response = await config.llmProvider.generateText(prompt, {
+          temperature: 0.7,
+          maxTokens: 2000
+        });
+        prd = response.text;
+      } else {
         throw new Error('No LLM provider configured');
       }
-
-      const prd = await provider.generate(prompt, {
-        temperature: 0.7,
-        maxTokens: 2000
-      });
 
       // Save PRD to project
       const prdPath = path.join(project.path, 'PRD.md');
@@ -1374,17 +1400,30 @@ Only output the task list in Markdown checklist format, nothing else.`;
 
       console.log('🤖 Calling LLM to break down tasks...');
 
-      // Use adaptive provider if available, otherwise fall back to llmProvider
-      const provider = config.adaptiveProvider || config.llmProvider;
+      let tasks: string;
 
-      if (!provider) {
+      // Use adaptive provider if available for intelligent selection
+      if (config.adaptiveProvider) {
+        console.log('🎯 Using adaptive provider for task breakdown...');
+        const response = await config.adaptiveProvider.generateWithAdaptiveSelection(
+          prompt,
+          'planning',
+          {
+            temperature: 0.5,
+            maxTokens: 1000
+          }
+        );
+        tasks = response.text;
+      } else if (config.llmProvider) {
+        console.log('🔧 Using standard LLM provider for task breakdown...');
+        const response = await config.llmProvider.generateText(prompt, {
+          temperature: 0.5,
+          maxTokens: 1000
+        });
+        tasks = response.text;
+      } else {
         throw new Error('No LLM provider configured');
       }
-
-      const tasks = await provider.generate(prompt, {
-        temperature: 0.5,
-        maxTokens: 1000
-      });
 
       console.log(`✅ Generated task breakdown`);
 
@@ -1452,29 +1491,42 @@ Only output valid JSON, nothing else.`;
 
       console.log('🤖 Calling LLM to estimate complexity...');
 
-      // Use adaptive provider if available, otherwise fall back to llmProvider
-      const provider = config.adaptiveProvider || config.llmProvider;
+      let responseText: string;
 
-      if (!provider) {
+      // Use adaptive provider if available for intelligent selection
+      if (config.adaptiveProvider) {
+        console.log('🎯 Using adaptive provider for validation...');
+        const response = await config.adaptiveProvider.generateWithAdaptiveSelection(
+          prompt,
+          'validation',
+          {
+            temperature: 0.3,
+            maxTokens: 500
+          }
+        );
+        responseText = response.text;
+      } else if (config.llmProvider) {
+        console.log('🔧 Using standard LLM provider for validation...');
+        const response = await config.llmProvider.generateText(prompt, {
+          temperature: 0.3,
+          maxTokens: 500
+        });
+        responseText = response.text;
+      } else {
         throw new Error('No LLM provider configured');
       }
-
-      const response = await provider.generate(prompt, {
-        temperature: 0.3,
-        maxTokens: 500
-      });
 
       // Parse JSON response (handle potential markdown wrapping)
       let estimate;
       try {
         // Try to extract JSON from response
-        const jsonMatch = response.match(/\{[\s\S]*\}/);
+        const jsonMatch = responseText.match(/\{[\s\S]*\}/);
         if (!jsonMatch) {
           throw new Error('No JSON found in response');
         }
         estimate = JSON.parse(jsonMatch[0]);
       } catch (parseError) {
-        console.error('Failed to parse AI response:', response);
+        console.error('Failed to parse AI response:', responseText);
         throw new Error('Failed to parse complexity estimate from AI');
       }
 
