@@ -823,12 +823,27 @@ CRITICAL: Always use the format \`\`\`language:filename with the colon and filen
       // Get updated file tree
       const fileTree = await buildFileTree(project.path);
 
+      // Flatten file tree for quality insights
+      const flattenFiles = (tree: any[]): any[] => {
+        const files: any[] = [];
+        for (const item of tree) {
+          if (item.type === 'file') {
+            files.push(item);
+          } else if (item.type === 'directory' && item.children) {
+            files.push(...flattenFiles(item.children));
+          }
+        }
+        return files;
+      };
+
+      const flatFiles = flattenFiles(fileTree);
+
       // Send WebSocket: Build complete
       if (config.wsService) {
         config.wsService.sendBuildComplete({
           buildId,
           success: executionResult.success,
-          files: fileTree,
+          files: flatFiles,  // Send flat array instead of tree
           duration
         });
 

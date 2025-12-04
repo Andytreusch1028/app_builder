@@ -1,46 +1,53 @@
-```markdown
 ## 📋 Project Overview
-We are developing a cross-platform calculator app with buttons for numbers from 0-9 and basic arithmetic operations like +, -, X, %, =, and CE.
+
+This project aims to build a simple calculator app with buttons for numbers 0-9 and arithmetic operations (+, -, X, %). The calculator will provide basic functionalities such as addition, subtraction, multiplication, percentage calculation, and clear the current input.
 
 ## 🎯 Core Features
-1. Basic number entry (0-9)
-2. Addition (+)
-3. Subtraction (-)
-4. Multiplication (X)
-5. Division (%)
-6. Equal (=)
-7. Clear (CE)
+
+1. **Number Entry**: Users can enter numbers from 0 to 9.
+2. **Arithmetic Operations**: Support for addition (+), subtraction (-), multiplication (X), and percentage (%).
+3. **Clear Input Button**: Allows users to reset or clear the current input.
+4. **Display Result**: The result of operations will be displayed on screen.
 
 ## 🏗️ Technical Approach
-- **Tech Stack:** React Native for cross-platform development, Expo for building the app.
-- **Key Files to Create:**
-  - `App.js`: The main entry point of the application.
-  - `CalculatorView.js`: Responsible for displaying and handling user input.
-  - `ButtonComponent.js`: Common button component for all calculator buttons.
-  - `ResultDisplay.js`: Displays the result of the calculations.
-- **Architecture Overview:** React Native follows a functional programming model, with components managed by props and state. The app uses hooks like `useState` to manage the current state.
+
+- **Tech Stack**: We will use HTML for the UI, CSS for styling, JavaScript for functionality, and possibly a library like React.js if we decide to build an advanced calculator with interactive elements.
+- **Key Files**:
+  - `index.html`: The main entry point of our application.
+  - `styles.css`: Styles to make the calculator look user-friendly.
+  - `script.js`: Contains the JavaScript code for implementing the calculator functionality.
+- **Architecture Overview**: We will organize the code into multiple files, each responsible for a specific part of the calculator. For example, we might have a `NumberInput` component for handling number entry and an `ArithmeticOperation` component for performing calculations.
 
 ## ✅ Implementation Steps
-1. Set up a new React Native project using Expo CLI.
-2. Create the `App.js` file as the root component of the application.
-3. Implement the `CalculatorView` component with JSX to render the calculator interface.
-4. Create multiple button components like `ButtonComponent` for each digit and operator.
-5. Establish state management usinghooks to keep track of the current number, operation, and result.
-6. Implement logic in the `CalculatorView` to handle user input and perform calculations based on the selected operations.
-7. Add a clear button (CE) to reset the calculator.
-8. Test the app thoroughly to ensure all features work as expected.
+
+1. **Setup Project Structure**:
+   - Create a new directory for your project.
+   - Initialize a new HTML file (`index.html`) in the root directory.
+   - Create CSS files (`styles.css`) in the `css` directory.
+   - Create JavaScript files (`script.js`) in the `js` directory.
+
+2. **Define HTML Structure**:
+   - In `index.html`, create a div to hold the calculator UI.
+   - Add buttons for numbers (0-9) and arithmetic operations (+, -, X, %).
+   - Include a display element to show the user's input and results.
+
+3. **Style with CSS**:
+   - Use CSS to style the calculator UI. Make sure the buttons are properly aligned and styled to look good on different devices.
+
+4. **Implement JavaScript Functionality**:
+   - In `script.js`, add event listeners to the buttons for number entry.
+   - Implement functions to handle arithmetic operations and update the display with the results.
+   - Add a clear input button that removes all entries from the display.
+
+5. **Test the Calculator**:
+   - Test the calculator thoroughly to ensure it works as expected.
+   - Use browser tools like Chrome DevTools to debug and fix any issues.
 
 ## 📦 Deliverables
-- `App.js`: Main entry point of the application.
-- `CalculatorView.js`: Button component for handling user input.
-- `ButtonComponent.js`: Common button component.
-- `ResultDisplay.js`: Displays the result of the calculations.
-- `node_modules` folder: All dependencies and packages used in the project.
-- `package.json`, `yarn.lock`: Project configuration files.
 
-**Requirements:**
-- Ensure all components are functional.
-- Implement error handling for division by zero.
-- Provide clear documentation on how to use the calculator app.
-- Include screenshots of the app in the deliverables.
-```
+- **index.html**: The main entry point of the calculator app.
+- **styles.css**: Styles for making the calculator look user-friendly.
+- **script.js**: Contains the JavaScript code for implementing the calculator functionality.
+- **README.md**: A detailed description of the project, its features, and setup instructions.
+
+This plan outlines a structured approach to building a simple calculator app with clear steps and deliverables.
