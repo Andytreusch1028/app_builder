@@ -1633,7 +1633,31 @@
                     })
                 });
 
-                const result = await response.json();
+                // Check if response is OK
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('❌ Build request failed:', response.status, errorText);
+                    addChatMessage('error', `❌ Build failed: ${response.status} ${response.statusText}`);
+                    addBuildLog('error', `HTTP ${response.status}: ${errorText}`);
+                    qualityInsightsData.status = 'Error';
+                    renderQualityInsights();
+                    return;
+                }
+
+                // Parse JSON response
+                let result;
+                try {
+                    result = await response.json();
+                } catch (jsonError) {
+                    const responseText = await response.text();
+                    console.error('❌ Failed to parse response as JSON:', jsonError);
+                    console.error('Response text:', responseText);
+                    addChatMessage('error', '❌ Server returned invalid response');
+                    addBuildLog('error', 'Invalid JSON response from server');
+                    qualityInsightsData.status = 'Error';
+                    renderQualityInsights();
+                    return;
+                }
 
                 if (result.success) {
                     const { duration, files, qualityScore, iterations, improved } = result.data;

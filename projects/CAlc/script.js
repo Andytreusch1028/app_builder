@@ -5,14 +5,16 @@ function appendNumber(number) {
 }
 
 function appendOperator(operator) {
-  display.value += operator;
+  if (display.value && !isNaN(display.value.slice(-1))) {
+    display.value += operator;
+  }
 }
 
 function clearDisplay() {
   display.value = '';
 }
 
-function calculate() {
+function calculateResult() {
   try {
     display.value = eval(display.value);
   } catch (error) {
