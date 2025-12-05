@@ -1,48 +1,39 @@
-### 📋 Project Overview
-This project aims to develop a functional calculator app with buttons for numbers 0-9, arithmetic operations (+, -, X, %), equals sign (=), and clear button (CE). The app should include basic arithmetic functionalities and handle user input seamlessly.
+```markdown
+# 📋 Project Overview
+This project is a simple calculator app that allows users to perform basic arithmetic operations such as addition, subtraction, multiplication, division, and percentage calculation. The calculator will have buttons for digits (0-9) and mathematical symbols (+, -, X, %), as well as an equals button to compute the result and a clear button (CE) to reset the input.
 
 ## 🎯 Core Features
-1. **Main Calculator Functionality:** Perform basic mathematical operations.
-2. **Number Entry:** Input numbers from 0 to 9 using buttons.
-3. **Arithmetic Operations:** Implement addition, subtraction, multiplication, and division with respective buttons.
-4. **Clear Button:** Reset the calculator to clear all inputs and results.
+1. **Number Entry:** Users can enter numbers by clicking on the corresponding buttons.
+2. **Arithmetic Operations:** Users can perform addition, subtraction, multiplication, division, and percentage calculations using these symbols.
+3. **Equals Button:** The equals button will compute the result of the arithmetic operations entered by the user.
+4. **Clear Button:** The clear button (CE) will reset the input and clear all previous entries.
 
 ## 🏗️ Technical Approach
-- **Tech Stack:** HTML5 with CSS for styling, JavaScript for logic and interactions, and possibly a backend service (e.g., Node.js and Express) for server-side processing if needed.
-- **Key Files:**
-  - `index.html`: The main HTML file that serves as the user interface. Contains the calculator layout and scripting.
-  - `styles.css`: CSS file to style the calculator components.
-  - `script.js`: JavaScript file containing the logic for number entry, arithmetic operations, and button behavior.
-- **Architecture Overview:** The calculator app will consist of a single HTML page with buttons for numbers, arithmetic operations, equals sign, and clear button. The logic for each operation will be implemented in JavaScript.
+- **Tech Stack:** We will use React for building the calculator's user interface, which is a popular choice for creating web applications. For handling the arithmetic operations, we will use JavaScript.
+- **Key Files to Create:** The main components of the calculator app will be:
+  - `App.js`: This file will handle rendering the calculator UI and managing the state.
+  - `Calculator.js`: This file will handle the logic for performing arithmetic operations and updating the display.
+  - `Button.js`: This file will create individual button components that can be used in the `Calculator.js` component.
+- **Architecture Overview:** The app will have a tree-like architecture where the `App.js` component is the root, which renders the calculator UI. The `Calculator.js` component contains the main logic for performing arithmetic operations and updating the display. The `Button.js` component creates individual button components that can be used in the `Calculator.js` component.
 
 ## ✅ Implementation Steps
-1. **Set up the HTML structure:**
-   - Create input fields for displaying the current calculation.
-   - Add buttons for digits (0-9).
-   - Implement buttons for arithmetic operations (+, -, X, %).
-   - Add a button for equals sign (=).
-   - Add a button for clear button (CE).
-
-2. **Style the calculator:**
-   - Use CSS to style the calculator components such as input fields, buttons, and background patterns.
-
-3. **Add JavaScript logic:**
-   - Write JavaScript functions to handle the number entry, arithmetic operations, and button behavior.
-   - Ensure that user input is validated and displayed correctly in the input field.
-
-4. **Test the app:**
-   - Test the calculator app on different browsers to ensure compatibility with backdrop-filter support for the blur effect.
-   - Verify that all features work as expected and handle inputs gracefully.
+1. **Set Up Project:** Create a new React project using `create-react-app`.
+2. **Install Dependencies:** Install necessary dependencies such as `prop-types` for type checking and `styled-components` for styling the UI.
+3. **Create Components:**
+   - `App.js`: Set up the main component that renders the calculator UI and manages the state.
+   - `Calculator.js`: Implement the logic for performing arithmetic operations and updating the display.
+   - `Button.js`: Create individual button components that can be used in the `Calculator.js` component.
+4. **Style Components:** Use styled-components to style the UI of the calculator app.
+5. **Unit Testing:** Write unit tests for the `Calculator.js` component using Jest.
+6. **Testing:** Test the calculator app in different scenarios, including edge cases and errors.
 
 ## 📦 Deliverables
-- `index.html`: The main HTML file of the calculator app.
-- `styles.css`: CSS file for styling the calculator components.
-- `script.js`: JavaScript file containing the logic for number entry, arithmetic operations, and button behavior.
+- **App.js:** The main component that renders the calculator UI and manages the state.
+- **Calculator.js:** The logic for performing arithmetic operations and updating the display.
+- **Button.js:** Individual button components that can be used in the `Calculator.js` component.
+- **styles.css:** Styling for the UI of the calculator app.
+- **tests/**: Unit tests for the `Calculator.js` component using Jest.
 
 **Requirements:**
-- Ensure that all buttons are functional and clear.
-- Display numbers correctly in the input field as users enter them.
-- Perform basic arithmetic operations accurately.
-- Handle user inputs without errors or interruptions.
-- Ensure compatibility with backdrop-filter support (if necessary).
-- Provide feedback for user interactions to enhance usability.
+- All files must be committed and pushed to GitHub before submitting the project plan.
+- The project should be completed within 3 weeks from the start date.

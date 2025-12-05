@@ -642,11 +642,12 @@ Description: ${project.description || 'No description'}`;
     console.log('   - Body:', JSON.stringify(req.body, null, 2));
 
     try {
-      const { prompt, projectId, useQuality } = req.body;
+      const { prompt, projectId, useQuality, agentPersona } = req.body;
 
       console.log('   - Prompt:', prompt?.substring(0, 100) + '...');
       console.log('   - Project ID:', projectId);
       console.log('   - Use Quality:', useQuality);
+      console.log('   - Agent Persona:', agentPersona ? 'Custom' : 'Default');
 
       if (!prompt || typeof prompt !== 'string' || prompt.trim() === '') {
         console.log('   ❌ Invalid prompt');
@@ -689,8 +690,15 @@ Description: ${project.description || 'No description'}`;
         });
       }
 
-      // Build the enhanced task with project context
-      const enhancedTask = `${prompt}
+      // Build the enhanced task with project context and agent personality
+      let enhancedTask = '';
+
+      // Add agent personality if provided
+      if (agentPersona && typeof agentPersona === 'string' && agentPersona.trim() !== '') {
+        enhancedTask += `AGENT PERSONALITY & BEHAVIOR:\n${agentPersona.trim()}\n\n---\n\n`;
+      }
+
+      enhancedTask += `${prompt}
 
 IMPORTANT INSTRUCTIONS:
 - You are building: ${project.name}

@@ -146,6 +146,11 @@
             }
         }
 
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
         /* Sidebar */
         .sidebar { background: var(--surface); border-right: 1px solid var(--border); padding: 16px; overflow-y: auto; }
         .section { padding: 12px 0; border-bottom: 1px solid var(--border); }
@@ -890,11 +895,26 @@
                 }
             };
 
-            // Status
-            const statusColor = qualityInsightsData.status === 'Building' ? 'var(--primary)' :
-                qualityInsightsData.status === 'Complete' ? 'var(--success)' :
-                qualityInsightsData.status === 'Error' ? 'var(--error)' : 'var(--text-secondary)';
-            setElement('insight-status', qualityInsightsData.status, 'color', statusColor);
+            // Status with spinner for "Building..." state
+            const statusEl = document.getElementById('insight-status');
+            if (statusEl) {
+                const isBuilding = qualityInsightsData.status === 'Building' || qualityInsightsData.status === 'Building...';
+                const statusColor = isBuilding ? 'var(--primary)' :
+                    qualityInsightsData.status === 'Complete' ? 'var(--success)' :
+                    qualityInsightsData.status === 'Error' ? 'var(--error)' : 'var(--text-secondary)';
+
+                // Add spinner animation for building state
+                if (isBuilding) {
+                    statusEl.innerHTML = `<span style="display: inline-flex; align-items: center; gap: 8px;">
+                        <span class="spinner" style="width: 14px; height: 14px; border: 2px solid var(--primary); border-top-color: transparent; border-radius: 50%; animation: spin 0.8s linear infinite;"></span>
+                        ${qualityInsightsData.status}
+                    </span>`;
+                    statusEl.style.color = statusColor;
+                } else {
+                    statusEl.textContent = qualityInsightsData.status;
+                    statusEl.style.color = statusColor;
+                }
+            }
 
             // Build Time
             if (qualityInsightsData.buildTime !== null) {
@@ -1622,6 +1642,10 @@
             addChatMessage('system', buildMsg);
             addBuildLog('info', isRetry ? 'Retrying build' : 'Build started');
 
+            // Show build progress indicator
+            qualityInsightsData.status = 'Building...';
+            renderQualityInsights();
+
             try {
                 const response = await fetch('/api/builder/build', {
                     method: 'POST',
@@ -1629,7 +1653,8 @@
                     body: JSON.stringify({
                         prompt: request,
                         projectId: currentProject?.id,
-                        useQuality: qualityMode
+                        useQuality: qualityMode,
+                        agentPersona: agentPersona // Include agent personality
                     })
                 });
 
@@ -2538,14 +2563,16 @@ Create a high-converting landing page for a SaaS product.
 
             // Add template if selected
             if (selectedTemplateContent) {
-                finalPrompt += '[UI/UX GUIDELINES - Apply these design principles to the application]\n\n';
+                finalPrompt += '⚠️ CRITICAL UI/UX INSTRUCTIONS - HIGHEST PRIORITY ⚠️\n\n';
+                finalPrompt += '[UI/UX GUIDELINES - These design principles OVERRIDE any styling mentioned in planning.md]\n\n';
                 finalPrompt += selectedTemplateContent;
                 finalPrompt += '\n\n';
+                finalPrompt += '**IMPORTANT:** If planning.md contains styling suggestions, IGNORE them and use ONLY the UI/UX guidelines above.\n\n';
             }
 
             // Add custom instructions if provided
             if (customInstructions) {
-                finalPrompt += '[ADDITIONAL UI/UX REQUIREMENTS]\n\n';
+                finalPrompt += '[ADDITIONAL UI/UX REQUIREMENTS - Also take precedence over planning.md]\n\n';
                 finalPrompt += customInstructions;
                 finalPrompt += '\n\n';
             }
