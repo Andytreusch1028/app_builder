@@ -1148,6 +1148,10 @@
             previewIframe.src = '';
             previewPlaceholder.style.display = 'grid';
 
+            // Clear file tree
+            const fileTree = document.getElementById('file-tree');
+            fileTree.innerHTML = '<p style="color: var(--text-secondary); font-size: 13px; padding: 12px;">No project selected</p>';
+
             currentBuildId = null;
             currentFilePath = null;
             if (buildPollingInterval) {
