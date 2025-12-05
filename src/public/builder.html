@@ -557,7 +557,41 @@
 
             <!-- Input Area (Bottom) - ALWAYS VISIBLE -->
             <div class="chat-input-area">
+                <!-- UI/UX Template Selector -->
+                <div style="display: flex; gap: 12px; margin-bottom: 12px; align-items: flex-start;">
+                    <div style="flex: 1;">
+                        <label for="ui_template_selector" style="display: block; font-size: 12px; font-weight: 500; margin-bottom: 6px; color: var(--text-secondary);">
+                            UI/UX Style (Optional)
+                        </label>
+                        <select id="ui_template_selector" class="input" style="height: 40px; padding: 8px 12px; font-size: 14px;">
+                            <option value="">None</option>
+                        </select>
+                    </div>
+                    <div style="padding-top: 26px;">
+                        <button id="preview_template_btn" class="btn" onclick="previewTemplate()" style="height: 40px; padding: 8px 16px; font-size: 14px; background: var(--bg-neutral-100); border: 1px solid var(--border);" disabled>
+                            👁️ Preview
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Custom UI/UX Instructions (Collapsible) -->
+                <div style="margin-bottom: 12px;">
+                    <button id="toggle_custom_ui_btn" class="btn" onclick="toggleCustomUIInstructions()" style="width: 100%; text-align: left; padding: 8px 12px; font-size: 13px; background: var(--bg-neutral-50); border: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
+                        <span>➕ Add Custom UI/UX Instructions</span>
+                        <span id="custom_ui_toggle_icon">▼</span>
+                    </button>
+                    <div id="custom_ui_instructions_container" style="display: none; margin-top: 8px;">
+                        <textarea id="custom_ui_instructions" class="input" placeholder="Add custom UI/UX instructions here (e.g., 'Use dark mode', 'Add animations', 'Mobile-first design')..." style="height: 80px; font-size: 13px; resize: vertical;"></textarea>
+                        <p class="muted-small" style="margin-top: 6px; font-size: 11px;">
+                            💡 These instructions will be combined with the selected template (if any)
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Build Request Input -->
                 <textarea id="prompt_composer" class="input" placeholder="Describe what you want to build..." style="height:100px; font-size:14px; margin-bottom: 12px; resize: vertical;"></textarea>
+
+                <!-- Build Button -->
                 <button id="build_app" class="btn btn-primary" onclick="sendBuildRequest()" style="width: 100%; font-size: 20px; padding: 12px;">
                     ➡️
                 </button>
@@ -1438,6 +1472,24 @@
                 return;
             }
 
+            // Build final prompt with UI/UX instructions
+            const finalPrompt = buildFinalPrompt(request);
+
+            // Show UI/UX template info if selected
+            const templateSelector = document.getElementById('ui_template_selector');
+            const customInstructions = document.getElementById('custom_ui_instructions').value.trim();
+            if (templateSelector.value || customInstructions) {
+                let uiInfo = '🎨 UI/UX: ';
+                if (templateSelector.value) {
+                    const selectedOption = templateSelector.options[templateSelector.selectedIndex];
+                    uiInfo += selectedOption.textContent;
+                }
+                if (customInstructions) {
+                    uiInfo += (templateSelector.value ? ' + ' : '') + 'Custom instructions';
+                }
+                addChatMessage('system', uiInfo);
+            }
+
             // Add user message and clear input
             addChatMessage('user', request);
             input.value = '';
@@ -1450,7 +1502,7 @@
                 addChatMessage('system', '📝 Generating project plan...');
                 addBuildLog('info', 'Generating planning.md');
 
-                const planGenerated = await generatePlanningMd(request);
+                const planGenerated = await generatePlanningMd(finalPrompt);
 
                 if (!planGenerated) {
                     addChatMessage('error', '❌ Failed to generate planning.md. Check console for details.');
@@ -1464,7 +1516,7 @@
 
             // Always build (no mode toggle)
             console.log('🔨 Calling sendBuildExecute...'); // Debug log
-            await sendBuildExecute(request);
+            await sendBuildExecute(finalPrompt);
         }
 
         // Check if server is healthy
@@ -2320,6 +2372,166 @@ Create a high-converting landing page for a SaaS product.
             document.getElementById('prd-editor').value = example;
             addChatMessage('system', `📄 Loaded example PRD for ${template}`);
             addBuildLog('info', 'Example PRD loaded');
+        }
+
+        // ============================================================
+        // UI/UX TEMPLATE FUNCTIONS
+        // ============================================================
+
+        let uiTemplates = [];
+        let selectedTemplateContent = '';
+
+        /**
+         * Load available UI/UX templates from the server
+         */
+        async function loadUITemplates() {
+            try {
+                const response = await fetch('/api/builder/ui-templates');
+                const data = await response.json();
+
+                if (data.success) {
+                    uiTemplates = data.templates;
+                    const selector = document.getElementById('ui_template_selector');
+
+                    // Clear existing options except "None"
+                    selector.innerHTML = '<option value="">None</option>';
+
+                    // Add template options
+                    data.templates.forEach(template => {
+                        const option = document.createElement('option');
+                        option.value = template.id;
+                        option.textContent = template.name;
+                        selector.appendChild(option);
+                    });
+
+                    console.log('✅ Loaded', data.templates.length, 'UI/UX templates');
+                }
+            } catch (error) {
+                console.error('❌ Error loading UI templates:', error);
+            }
+        }
+
+        /**
+         * Handle template selection change
+         */
+        document.addEventListener('DOMContentLoaded', () => {
+            const selector = document.getElementById('ui_template_selector');
+            const previewBtn = document.getElementById('preview_template_btn');
+
+            selector.addEventListener('change', async (e) => {
+                const templateId = e.target.value;
+
+                if (!templateId) {
+                    selectedTemplateContent = '';
+                    previewBtn.disabled = true;
+                    return;
+                }
+
+                // Enable preview button
+                previewBtn.disabled = false;
+
+                // Load template content
+                try {
+                    const response = await fetch(`/api/builder/ui-templates/${templateId}`);
+                    const data = await response.json();
+
+                    if (data.success) {
+                        selectedTemplateContent = data.template.content;
+                        console.log('✅ Loaded template:', data.template.name);
+                    }
+                } catch (error) {
+                    console.error('❌ Error loading template content:', error);
+                    selectedTemplateContent = '';
+                }
+            });
+
+            // Load templates on page load
+            loadUITemplates();
+        });
+
+        /**
+         * Preview selected template in a modal
+         */
+        function previewTemplate() {
+            if (!selectedTemplateContent) {
+                alert('No template selected');
+                return;
+            }
+
+            const modal = document.createElement('div');
+            modal.className = 'modal';
+            modal.style.display = 'flex';
+            modal.innerHTML = `
+                <div class="modal-content" style="max-width: 800px; max-height: 80vh; overflow-y: auto;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                        <h3>📋 Template Preview</h3>
+                        <button class="btn" onclick="this.closest('.modal').remove()" style="padding: 8px 16px;">✕ Close</button>
+                    </div>
+                    <pre style="background: var(--bg-neutral-50); padding: 16px; border-radius: 8px; overflow-x: auto; white-space: pre-wrap; font-size: 13px; line-height: 1.6;">${escapeHtml(selectedTemplateContent)}</pre>
+                </div>
+            `;
+            document.body.appendChild(modal);
+        }
+
+        /**
+         * Toggle custom UI/UX instructions section
+         */
+        function toggleCustomUIInstructions() {
+            const container = document.getElementById('custom_ui_instructions_container');
+            const icon = document.getElementById('custom_ui_toggle_icon');
+            const btn = document.getElementById('toggle_custom_ui_btn');
+
+            if (container.style.display === 'none') {
+                container.style.display = 'block';
+                icon.textContent = '▲';
+                btn.querySelector('span:first-child').textContent = '➖ Hide Custom UI/UX Instructions';
+            } else {
+                container.style.display = 'none';
+                icon.textContent = '▼';
+                btn.querySelector('span:first-child').textContent = '➕ Add Custom UI/UX Instructions';
+            }
+        }
+
+        /**
+         * Escape HTML for safe display
+         */
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        /**
+         * Build the final prompt with UI/UX instructions
+         */
+        function buildFinalPrompt(userRequest) {
+            const customInstructions = document.getElementById('custom_ui_instructions').value.trim();
+            let finalPrompt = '';
+
+            // Add template if selected
+            if (selectedTemplateContent) {
+                finalPrompt += '[UI/UX GUIDELINES - Apply these design principles to the application]\n\n';
+                finalPrompt += selectedTemplateContent;
+                finalPrompt += '\n\n';
+            }
+
+            // Add custom instructions if provided
+            if (customInstructions) {
+                finalPrompt += '[ADDITIONAL UI/UX REQUIREMENTS]\n\n';
+                finalPrompt += customInstructions;
+                finalPrompt += '\n\n';
+            }
+
+            // Add separator if we have UI/UX instructions
+            if (selectedTemplateContent || customInstructions) {
+                finalPrompt += '---\n\n';
+                finalPrompt += '[BUILD REQUEST]\n\n';
+            }
+
+            // Add user's build request
+            finalPrompt += userRequest;
+
+            return finalPrompt;
         }
     </script>
 

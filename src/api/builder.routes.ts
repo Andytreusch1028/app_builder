@@ -62,6 +62,78 @@ export function createBuilderRouter(config: BuilderRouterConfig): Router {
     console.log('✨ Pack 11 Phase 2 enabled for Application Builder');
   }
 
+  // ============================================================
+  // UI/UX TEMPLATE ENDPOINTS
+  // ============================================================
+
+  /**
+   * GET /api/ui-templates
+   * List all available UI/UX templates
+   */
+  router.get('/ui-templates', async (req: Request, res: Response) => {
+    try {
+      const templatesDir = path.join(config.workspaceRoot, 'src', 'data', 'ui-templates');
+
+      // Check if templates directory exists
+      try {
+        await fs.access(templatesDir);
+      } catch {
+        return res.json({ success: true, templates: [] });
+      }
+
+      const files = await fs.readdir(templatesDir);
+      const templates = files
+        .filter(f => f.endsWith('.md'))
+        .map(f => ({
+          id: f.replace('.md', ''),
+          name: f.replace('.md', '').split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' '),
+          filename: f
+        }));
+
+      res.json({ success: true, templates });
+    } catch (error: any) {
+      console.error('❌ Error listing UI templates:', error);
+      res.status(500).json({ success: false, error: error.message });
+    }
+  });
+
+  /**
+   * GET /api/ui-templates/:templateId
+   * Get content of a specific UI/UX template
+   */
+  router.get('/ui-templates/:templateId', async (req: Request, res: Response) => {
+    try {
+      const { templateId } = req.params;
+      const templatesDir = path.join(config.workspaceRoot, 'src', 'data', 'ui-templates');
+      const templatePath = path.join(templatesDir, `${templateId}.md`);
+
+      // Check if template exists
+      try {
+        await fs.access(templatePath);
+      } catch {
+        return res.status(404).json({ success: false, error: 'Template not found' });
+      }
+
+      const content = await fs.readFile(templatePath, 'utf-8');
+
+      res.json({
+        success: true,
+        template: {
+          id: templateId,
+          name: templateId.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' '),
+          content
+        }
+      });
+    } catch (error: any) {
+      console.error('❌ Error reading UI template:', error);
+      res.status(500).json({ success: false, error: error.message });
+    }
+  });
+
+  // ============================================================
+  // PROJECT MANAGEMENT ENDPOINTS
+  // ============================================================
+
   // Load existing projects from disk on startup
   async function loadExistingProjects() {
     try {
